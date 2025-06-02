@@ -11,8 +11,9 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Flask and requests for the model downloader
-RUN pip install flask requests
+# Handle pip and package installations carefully
+RUN python -m pip install --upgrade pip && \
+    python -m pip install --no-cache-dir flask==2.3.3 requests werkzeug==2.3.7 --ignore-installed
 
 # Set working directory
 WORKDIR /workspace
@@ -26,8 +27,15 @@ COPY templates /workspace/templates
 RUN chmod +x /workspace/flux_install.sh && \
     /workspace/flux_install.sh
 
-# Set the working directory for the final CMD
-WORKDIR /workspace/ComfyUI
+# Copy and set up the start script
+COPY start_services.sh /workspace/
+RUN chmod +x /workspace/start_services.sh
+
+# Expose ports
+EXPOSE 8188 8866
+
+# Set the entry point to our start script
+ENTRYPOINT ["/workspace/start_services.sh"]
 
 # Expose the ports for ComfyUI and model downloader
 EXPOSE 8188 8866

@@ -142,5 +142,94 @@ def start_download():
 def get_status():
     return jsonify(download_status)
 
+@app.route('/get_model_configs')
+def get_model_configs():
+    return jsonify(MODEL_CONFIGS)
+
+@app.route('/add_model', methods=['POST'])
+def add_model():
+    data = request.json
+    model_set = data.get('model_set')
+    model_id = data.get('model_id')
+    model_info = data.get('model_info')
+    new_group = data.get('new_group', False)
+    new_group_name = data.get('new_group_name', None)
+    if not model_set or not model_id or not model_info:
+        return jsonify({'error': 'Missing fields'}), 400
+    if new_group:
+        if not new_group_name:
+            return jsonify({'error': 'New group name required'}), 400
+        if model_set in MODEL_CONFIGS:
+            return jsonify({'error': 'Group already exists'}), 409
+        MODEL_CONFIGS[model_set] = {
+            'name': new_group_name,
+            'models': {model_id: model_info}
+        }
+    else:
+        if model_set not in MODEL_CONFIGS:
+            return jsonify({'error': 'Model set not found'}), 404
+        if model_id in MODEL_CONFIGS[model_set]['models']:
+            return jsonify({'error': 'Model ID already exists'}), 409
+        MODEL_CONFIGS[model_set]['models'][model_id] = model_info
+    save_model_configs(MODEL_CONFIGS)
+    return jsonify({'status': 'added'})
+
+@app.route('/edit_model', methods=['POST'])
+def edit_model():
+    data = request.json
+    model_set = data.get('model_set')
+    model_id = data.get('model_id')
+    model_info = data.get('model_info')
+    if not model_set or not model_id or not model_info:
+        return jsonify({'error': 'Missing fields'}), 400
+    # Find the current group containing this model (in case group is changed)
+    old_group = None
+    for group, group_data in MODEL_CONFIGS.items():
+        if model_id in group_data['models']:
+            old_group = group
+            break
+    if old_group is None:
+        return jsonify({'error': 'Model ID not found in any group'}), 404
+    # If group changed, move the model
+    if old_group != model_set:
+        # Don't overwrite if model_id already exists in new group
+        if model_id in MODEL_CONFIGS[model_set]['models']:
+            return jsonify({'error': 'Model ID already exists in target group'}), 409
+        MODEL_CONFIGS[model_set]['models'][model_id] = model_info
+        del MODEL_CONFIGS[old_group]['models'][model_id]
+    else:
+        MODEL_CONFIGS[model_set]['models'][model_id] = model_info
+    save_model_configs(MODEL_CONFIGS)
+    return jsonify({'status': 'edited'})
+
+@app.route('/delete_model', methods=['POST'])
+def delete_model():
+    data = request.json
+    model_set = data.get('model_set')
+    model_id = data.get('model_id')
+    if not model_set or not model_id:
+        return jsonify({'error': 'Missing fields'}), 400
+    if model_set not in MODEL_CONFIGS:
+        return jsonify({'error': 'Model set not found'}), 404
+    if model_id not in MODEL_CONFIGS[model_set]['models']:
+        return jsonify({'error': 'Model ID not found'}), 404
+    del MODEL_CONFIGS[model_set]['models'][model_id]
+    save_model_configs(MODEL_CONFIGS)
+    return jsonify({'status': 'deleted'})
+
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'model_configs.json')
+
+def load_model_configs():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return MODEL_CONFIGS
+
+def save_model_configs(configs):
+    with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+        json.dump(configs, f, indent=2)
+
+MODEL_CONFIGS = load_model_configs()
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8866)

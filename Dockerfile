@@ -22,10 +22,12 @@ WORKDIR /workspace
 COPY flux_install.sh /workspace/flux_install.sh
 COPY model_downloader.py /workspace/model_downloader.py
 COPY templates /workspace/templates
+COPY install_sage_attention.sh /workspace/install_sage_attention.sh
 
 # Make the script executable and run it.
 RUN chmod +x /workspace/flux_install.sh && \
-    /workspace/flux_install.sh
+    /workspace/flux_install.sh && \
+    chmod +x /workspace/install_sage_attention.sh
 
 # Copy and set up the start script
 COPY start_services.sh /workspace/

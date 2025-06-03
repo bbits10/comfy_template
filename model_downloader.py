@@ -18,40 +18,58 @@ MODEL_CONFIGS = {
             "t5xxl_fp16": {
                 "name": "T5xXL FP16 Text Encoder",
                 "url": "https://huggingface.co/vivi168/text_encoder/resolve/main/t5xxl_fp16.safetensors",
-                "path": "text_encoders/t5xxl_fp16.safetensors"
+                "path": "text_encoders/t5xxl_fp16.safetensors",
+                "description": "Large text encoder for Flux models. Required for text-to-image tasks."
             },
             "clip_l": {
                 "name": "CLIP L Text Encoder",
                 "url": "https://huggingface.co/vivi168/text_encoder/resolve/main/clip_l.safetensors",
-                "path": "text_encoders/clip_I.safetensors"
+                "path": "text_encoders/clip_I.safetensors",
+                "description": "CLIP-L text encoder for improved prompt understanding."
             },
             "ae_vae": {
                 "name": "Flux VAE",
                 "url": "https://huggingface.co/vivi168/vae/resolve/main/ae.safetensors",
-                "path": "vae/ae.safetensors"
+                "path": "vae/ae.safetensors",
+                "description": "Variational Autoencoder for Flux. Required for decoding images."
             },
             "flux1_dev": {
                 "name": "Flux Main Model",
                 "url": "https://huggingface.co/vivi168/model/resolve/main/flux1-dev.safetensors",
-                "path": "diffusion_models/flux1-dev.safetensors"
+                "path": "diffusion_models/flux1-dev.safetensors",
+                "description": "Main diffusion model weights for Flux."
             }
         }
     },
-    # "example_set": {  # Example of how to add a new model set
-    #     "name": "Example Model Set",
-    #     "models": {
-    #         "model1": {
-    #             "name": "Example Model 1",
-    #             "url": "https://huggingface.co/example/model1/resolve/main/model1.safetensors",
-    #             "path": "diffusion_models/model1.safetensors"
-    #         },
-    #         "model2": {
-    #             "name": "Example Model 2",
-    #             "url": "https://huggingface.co/example/model2/resolve/main/model2.safetensors",
-    #             "path": "text_encoders/model2.safetensors"
-    #         }
-    #     }
-    # }
+    "Wan2.1 Vace": {
+        "name": "Wan Vace Model Set",
+        "models": {
+            "Wan_Vace_fp16": {
+                "name": "Wan Vace 14B FP16",
+                "url": "https://huggingface.co/QuantStack/Wan2.1-VACE-14B-GGUF/resolve/main/Wan2.1-VACE-14B-F16.gguf",
+                "path": "unet/Wan2.1-VACE-14B-F16.gguf",
+                "description": "Wan2.1 VACE 14B model in GGUF format (FP16). For advanced video tasks."
+            },
+            "wan_2.1_vae": {
+                "name": "Wan 2.1 VAE",
+                "url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors",
+                "path": "vae/wan_2.1_vae.safetensors",
+                "description": "VAE for Wan2.1. Required for decoding outputs."
+            },
+            "umt5_xxl_fp16": {
+                "name": "UMT5 XXL FP16 Text Encoder",
+                "url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp16.safetensors",
+                "path": "text_encoders/umt5_xxl_fp16.safetensors",
+                "description": "UMT5 XXL text encoder for Wan2.1."
+            },
+            "wan21_causvid_14b_t2v_lora_rank32": {
+                "name": "Wan21 CausVid 14B T2V LoRA Rank32",
+                "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
+                "path": "lora/Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
+                "description": "LoRA for Wan2.1 CausVid 14B T2V. For video-to-video tasks."
+            }
+        }
+    }
     # Add more model sets here
 }
 

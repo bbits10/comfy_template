@@ -28,10 +28,6 @@ echo_section() {
   echo "--- $1 ---"
 }
 
-# 1. Upgrade pip
-echo_section "Upgrading pip"
-python -m pip install --upgrade pip
-
 # 2. Clone or Update ComfyUI
 if [ ! -d "$COMFYUI_DIR" ]; then
   echo_section "Cloning ComfyUI"

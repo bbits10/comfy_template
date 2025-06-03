@@ -32,6 +32,11 @@
                 <div class="card-body">
                   <h5 class="card-title">{{ model.name }}</h5>
                   <p class="card-text">Path: {{ model.path }}</p>
+                  {% if model.description %}
+                  <p class="card-text">
+                    <small class="text-muted">{{ model.description }}</small>
+                  </p>
+                  {% endif %}
                   <button
                     class="btn btn-primary download-btn"
                     data-model-id="{{ model_id }}"

@@ -9,15 +9,6 @@ echo "Current directory: $(pwd)"
 echo "Listing /workspace:"
 ls -la /workspace
 
-# Create model directories
-echo "Creating model directories..."
-mkdir -p /workspace/ComfyUI/models/{checkpoints,clip,clip_vision,controlnet,diffusers,embeddings,loras,upscale_models,vae,unet,configs}
-echo "Model directories created."
-
-echo "Listing /workspace/ComfyUI before operations:"
-ls -la /workspace/ComfyUI
-ls -la /workspace/ComfyUI/models
-
 # Start Jupyter Notebook (no password, on port 8888)
 echo "Starting Jupyter Notebook..."
 jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password='' &
@@ -37,6 +28,11 @@ else
     bash /workspace/comfy_template/flux_install.sh
     echo "ComfyUI installation completed successfully."
 fi
+
+# Create model directories after ComfyUI installation
+echo "Creating additional model directories..."
+mkdir -p /workspace/ComfyUI/models/{checkpoints,clip,clip_vision,controlnet,diffusers,embeddings,loras,upscale_models,vae,unet,configs}
+echo "Model directories created."
 
 # Start the model downloader in the background
 echo "Starting model downloader..."

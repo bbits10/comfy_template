@@ -1,50 +1,32 @@
-# Use the same base image as your RunPod template
+# Use the RunPod CUDA 12.8.1 base image for full CUDA 12.8 compatibility
 FROM runpod/pytorch:2.8.0-py3.11-cuda12.8.1-cudnn-devel-ubuntu22.04
 
-# Set environment variables to prevent interactive prompts during package installations
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Update package lists and install essential build tools + git
 RUN apt-get update && apt-get install -y \
     wget \
     git \
     python3-pip \
+    dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
-# Handle pip and package installations carefully
 RUN python -m pip install --upgrade pip && \
     python -m pip install --no-cache-dir flask==2.3.3 requests werkzeug==2.3.7 --ignore-installed
 
-# Set working directory
 WORKDIR /workspace
 
-# Copy your installation script and model downloader into the image
-COPY flux_install.sh /workspace/flux_install.sh
-COPY model_downloader.py /workspace/model_downloader.py
-COPY templates /workspace/templates
-COPY install_sage_attention.sh /workspace/install_sage_attention.sh
+RUN git clone --depth 1 https://github.com/bbits10/comfy_template.git /workspace/comfy_template
+WORKDIR /workspace/comfy_template
 
-# Make the script executable and run it.
-RUN chmod +x /workspace/flux_install.sh && \
-    /workspace/flux_install.sh && \
-    chmod +x /workspace/install_sage_attention.sh
+# Fix line endings for all shell scripts (important for Windows users)
+RUN dos2unix *.sh
 
-# Copy and set up the start script
-COPY start_services.sh /workspace/
-RUN chmod +x /workspace/start_services.sh
+RUN chmod +x flux_install.sh && \
+    ./flux_install.sh && \
+    chmod +x install_sage_attention.sh
 
-# Expose ports
-EXPOSE 8188 8866
+RUN chmod +x start_services.sh
 
-# Set the entry point to our start script
-ENTRYPOINT ["/workspace/start_services.sh"]
+EXPOSE 8188 8866 8888
 
-# Expose the ports for ComfyUI and model downloader
-EXPOSE 8188 8866
-
-# Copy and set up the startup script
-COPY start_services.sh /workspace/start_services.sh
-RUN chmod +x /workspace/start_services.sh
-
-# Command to start both services when the container launches
-CMD ["/workspace/start_services.sh"]
+ENTRYPOINT ["/workspace/comfy_template/start_services.sh"]

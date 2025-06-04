@@ -368,17 +368,17 @@
         });
 
         // Edit Model (allow group change)
-        $('.edit-btn').click(function () {
+        $(".edit-btn").click(function () {
           // Set the dropdown value, not repopulate
-          $('#edit-model-set').val($(this).data('model-set'));
-          $('#edit-model-id').val($(this).data('model-id'));
-          $('#edit-model-name').val($(this).data('model-name'));
-          $('#edit-model-url').val($(this).data('model-url'));
-          $('#edit-model-path').val($(this).data('model-path'));
-          $('#edit-model-description').val($(this).data('model-description'));
-          $('#edit-model-status').text('');
+          $("#edit-model-set").val($(this).data("model-set"));
+          $("#edit-model-id").val($(this).data("model-id"));
+          $("#edit-model-name").val($(this).data("model-name"));
+          $("#edit-model-url").val($(this).data("model-url"));
+          $("#edit-model-path").val($(this).data("model-path"));
+          $("#edit-model-description").val($(this).data("model-description"));
+          $("#edit-model-status").text("");
           // Show modal using Bootstrap 5 API
-          var modal = document.getElementById('editModelModal');
+          var modal = document.getElementById("editModelModal");
           var bsModal = bootstrap.Modal.getOrCreateInstance(modal);
           bsModal.show();
         });

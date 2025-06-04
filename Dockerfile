@@ -15,26 +15,25 @@ RUN python -m pip install --upgrade pip && \
 
 WORKDIR /workspace
 
+# Clone the repository and ensure we're in the right directory
 RUN git clone --depth 1 https://github.com/bbits10/comfy_template.git /workspace/comfy_template
+
+# Change to the template directory
 WORKDIR /workspace/comfy_template
 
-# Debug: List files after clone
-RUN echo "=== Files after git clone ===" && ls -la
+# Verify we have the files and fix line endings
+RUN ls -la && \
+    dos2unix *.sh && \
+    chmod +x *.sh
 
-# Fix line endings for all shell scripts (important for Windows users)
-RUN dos2unix *.sh
-
-# Debug: Check files after dos2unix
-RUN echo "=== Files after dos2unix ===" && ls -la *.sh
-
-RUN chmod +x flux_install.sh && \
-    ./flux_install.sh && \
+# Install flux and set permissions
+RUN ./flux_install.sh && \
     chmod +x install_sage_attention.sh
 
-RUN chmod +x start_services.sh
-
-# Debug: Final file check before entrypoint
-RUN echo "=== Final file check ===" && ls -la start_services.sh && file start_services.sh
+# Final verification that start_services.sh exists and is executable
+RUN ls -la start_services.sh && \
+    test -x start_services.sh && \
+    echo "start_services.sh is executable"
 
 EXPOSE 8188 8866 8888
 

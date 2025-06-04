@@ -15,8 +15,8 @@ RUN python -m pip install --upgrade pip && \
 
 WORKDIR /opt
 
-# Clone the repository to a safe location that won't be overwritten
-RUN git clone --depth 1 https://github.com/bbits10/comfy_template.git /opt/comfy_template
+# Copy local files instead of cloning from GitHub
+COPY . /opt/comfy_template/
 
 # Change to the template directory
 WORKDIR /opt/comfy_template

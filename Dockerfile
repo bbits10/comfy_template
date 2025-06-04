@@ -13,13 +13,13 @@ RUN apt-get update && apt-get install -y \
 RUN python -m pip install --upgrade pip && \
     python -m pip install --no-cache-dir flask==2.3.3 requests werkzeug==2.3.7 --ignore-installed
 
-WORKDIR /workspace
+WORKDIR /opt
 
-# Clone the repository and ensure we're in the right directory
-RUN git clone --depth 1 https://github.com/bbits10/comfy_template.git /workspace/comfy_template
+# Clone the repository to a safe location that won't be overwritten
+RUN git clone --depth 1 https://github.com/bbits10/comfy_template.git /opt/comfy_template
 
 # Change to the template directory
-WORKDIR /workspace/comfy_template
+WORKDIR /opt/comfy_template
 
 # Verify we have the files and fix line endings
 RUN ls -la && \
@@ -37,20 +37,25 @@ RUN ls -la start_services.sh && \
 
 EXPOSE 8188 8866 8888
 
-# Debug entrypoint
+# Debug entrypoint that handles RunPod volume mounting
 RUN echo "=== Creating debug entrypoint ===" && \
     echo '#!/bin/bash' > /debug_entrypoint.sh && \
     echo 'echo "=== Debug: Container starting ==="' >> /debug_entrypoint.sh && \
     echo 'echo "Current directory: $(pwd)"' >> /debug_entrypoint.sh && \
     echo 'echo "Listing /workspace:"' >> /debug_entrypoint.sh && \
     echo 'ls -la /workspace/' >> /debug_entrypoint.sh && \
-    echo 'echo "Listing /workspace/comfy_template:"' >> /debug_entrypoint.sh && \
+    echo 'echo "Listing /opt/comfy_template:"' >> /debug_entrypoint.sh && \
+    echo 'ls -la /opt/comfy_template/' >> /debug_entrypoint.sh && \
+    echo 'echo "Copying files from /opt/comfy_template to /workspace/comfy_template..."' >> /debug_entrypoint.sh && \
+    echo 'mkdir -p /workspace/comfy_template' >> /debug_entrypoint.sh && \
+    echo 'cp -r /opt/comfy_template/* /workspace/comfy_template/' >> /debug_entrypoint.sh && \
+    echo 'echo "Files copied. Listing /workspace/comfy_template:"' >> /debug_entrypoint.sh && \
     echo 'ls -la /workspace/comfy_template/' >> /debug_entrypoint.sh && \
-    echo 'echo "Checking start_services.sh:"' >> /debug_entrypoint.sh && \
-    echo 'ls -la /workspace/comfy_template/start_services.sh' >> /debug_entrypoint.sh && \
-    echo 'file /workspace/comfy_template/start_services.sh' >> /debug_entrypoint.sh && \
+    echo 'echo "Making start_services.sh executable..."' >> /debug_entrypoint.sh && \
+    echo 'chmod +x /workspace/comfy_template/start_services.sh' >> /debug_entrypoint.sh && \
     echo 'echo "=== Executing start_services.sh ==="' >> /debug_entrypoint.sh && \
-    echo 'exec /workspace/comfy_template/start_services.sh' >> /debug_entrypoint.sh && \
+    echo 'cd /workspace/comfy_template' >> /debug_entrypoint.sh && \
+    echo 'exec ./start_services.sh' >> /debug_entrypoint.sh && \
     chmod +x /debug_entrypoint.sh
 
 ENTRYPOINT ["/debug_entrypoint.sh"]

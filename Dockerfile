@@ -26,9 +26,8 @@ RUN ls -la && \
     dos2unix *.sh && \
     chmod +x *.sh
 
-# Install flux and set permissions
-RUN ./flux_install.sh && \
-    chmod +x install_sage_attention.sh
+# Don't install ComfyUI during build - do it at runtime instead
+# This keeps the image smaller and more reliable
 
 # Final verification that start_services.sh exists and is executable
 RUN ls -la start_services.sh && \

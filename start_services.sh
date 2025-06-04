@@ -24,6 +24,20 @@ jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookAp
 JUPYTER_PID=$!
 echo "Jupyter Notebook PID: $JUPYTER_PID"
 
+# Run ComfyUI installation first
+echo "Running ComfyUI installation..."
+echo "Checking if flux_install.sh exists at /workspace/comfy_template/flux_install.sh"
+if [ ! -f "/workspace/comfy_template/flux_install.sh" ]; then
+    echo "ERROR: /workspace/comfy_template/flux_install.sh not found!"
+    exit 1
+else
+    echo "Making flux_install.sh executable..."
+    chmod +x /workspace/comfy_template/flux_install.sh
+    echo "Running flux_install.sh..."
+    bash /workspace/comfy_template/flux_install.sh
+    echo "ComfyUI installation completed successfully."
+fi
+
 # Start the model downloader in the background
 echo "Starting model downloader..."
 echo "Checking if model_downloader.py exists at /workspace/comfy_template/model_downloader.py"

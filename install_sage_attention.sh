@@ -50,10 +50,16 @@ if [ -d "$SAGE_ATTENTION_DIR_NAME" ]; then
   export CUDA_HOME="${CUDA_HOME:-/usr/local/cuda}"
   export LD_LIBRARY_PATH="${CUDA_HOME}/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
   export PATH="${CUDA_HOME}/bin${PATH:+:${PATH}}"
+  
+  # Additional build environment variables
+  export FORCE_CUDA=1
+  export MAX_JOBS=4  # Limit parallel jobs to avoid memory issues
 
   echo "Using environment:"
   echo "  TORCH_CUDA_ARCH_LIST=$TORCH_CUDA_ARCH_LIST"
   echo "  CUDA_HOME=$CUDA_HOME"
+  echo "  FORCE_CUDA=$FORCE_CUDA"
+  echo "  MAX_JOBS=$MAX_JOBS"
   echo "  LD_LIBRARY_PATH (snippet)=${LD_LIBRARY_PATH:0:100}..."
   echo "  PATH (snippet)=${PATH:0:100}..."
 
@@ -83,16 +89,35 @@ if [ -d "$SAGE_ATTENTION_DIR_NAME" ]; then
       nvidia-smi -L
   fi
 
+  # Check for essential build tools
+  echo "Checking build dependencies..."
+  
+  # Check for ninja (faster builds)
+  if command -v ninja &> /dev/null; then
+      echo "✓ Ninja build system found"
+      export CMAKE_GENERATOR=Ninja
+  else
+      echo "⚠️  Ninja not found, using default build system"
+  fi
+  
+  # Check PyTorch CUDA support
+  python -c "import torch; print(f'PyTorch CUDA available: {torch.cuda.is_available()}'); print(f'CUDA device count: {torch.cuda.device_count()}')" 2>/dev/null || echo "⚠️  Could not verify PyTorch CUDA support"
+
   cd "$SAGE_ATTENTION_DIR_NAME"
   echo "Changed directory to $(pwd)"
   
-  # Use the recommended installation method for SageAttention 2.1.1
-  echo "Running: python setup.py install"
-  python setup.py install
+  # Clean any previous build artifacts
+  echo "Cleaning previous build artifacts..."
+  rm -rf build/ dist/ *.egg-info/
+  
+  # Use pip install instead of setup.py for better dependency management
+  echo "Running: pip install -e . --no-build-isolation -v"
+  pip install -e . --no-build-isolation -v
   
   if [ $? -eq 0 ]; then
     echo "✓ SageAttention 2.1.1 installed successfully."
-    echo "Testing import..."
+    echo "Testing import from outside the source directory..."
+    cd "$CUSTOM_NODES_DIR" # Move out of source directory to avoid import conflicts
     python -c "from sageattention import sageattn; print('✓ SageAttention import successful')" || echo "⚠️  Import test failed"
   else
     echo "ERROR: SageAttention installation failed. Check output above."

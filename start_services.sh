@@ -9,11 +9,13 @@ echo "Current directory: $(pwd)"
 echo "Listing /workspace:"
 ls -la /workspace
 
-# Start JupyterLab (no password, on port 8888) - includes terminal functionality
-echo "Starting JupyterLab..."
+# Start JupyterLab from /workspace directory so ComfyUI folder is visible
+echo "Starting JupyterLab from /workspace directory..."
+cd /workspace
 jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --ServerApp.token='' --ServerApp.password='' --ServerApp.allow_origin='*' --ServerApp.allow_remote_access=True &
 JUPYTER_PID=$!
 echo "JupyterLab PID: $JUPYTER_PID"
+echo "JupyterLab started from directory: $(pwd)"
 
 # Run ComfyUI installation first
 echo "Running ComfyUI installation..."
@@ -27,6 +29,17 @@ else
     echo "Running flux_install.sh..."
     bash /workspace/comfy_template/flux_install.sh
     echo "ComfyUI installation completed successfully."
+fi
+
+# Create symbolic link for ComfyUI visibility in template directory
+echo "Creating symbolic link for ComfyUI access..."
+if [ -d "/workspace/ComfyUI" ] && [ ! -L "/workspace/comfy_template/ComfyUI" ]; then
+    ln -s /workspace/ComfyUI /workspace/comfy_template/ComfyUI
+    echo "✓ Created symbolic link: /workspace/comfy_template/ComfyUI -> /workspace/ComfyUI"
+elif [ -L "/workspace/comfy_template/ComfyUI" ]; then
+    echo "✓ Symbolic link already exists: /workspace/comfy_template/ComfyUI"
+else
+    echo "⚠️  ComfyUI directory not found, skipping symbolic link creation"
 fi
 
 # Create model directories after ComfyUI installation

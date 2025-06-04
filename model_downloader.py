@@ -10,8 +10,8 @@ app = Flask(__name__)
 # Base directory for models
 MODELS_BASE_DIR = "/workspace/ComfyUI/models"
 
-# Model configurations
-MODEL_CONFIGS = {
+# Default model configurations (used only if model_configs.json doesn't exist)
+DEFAULT_MODEL_CONFIGS = {
     "flux": {
         "name": "Flux Model Set",
         "models": {
@@ -24,7 +24,7 @@ MODEL_CONFIGS = {
             "clip_l": {
                 "name": "CLIP L Text Encoder",
                 "url": "https://huggingface.co/vivi168/text_encoder/resolve/main/clip_l.safetensors",
-                "path": "text_encoders/clip_I.safetensors",
+                "path": "text_encoders/clip_l.safetensors",
                 "description": "CLIP-L text encoder for improved prompt understanding."
             },
             "ae_vae": {
@@ -38,6 +38,18 @@ MODEL_CONFIGS = {
                 "url": "https://huggingface.co/vivi168/model/resolve/main/flux1-dev.safetensors",
                 "path": "diffusion_models/flux1-dev.safetensors",
                 "description": "Main diffusion model weights for Flux."
+            },
+            "t5xxl_fp8_e4m3fn_scaled": {
+                "name": "T5xXL FP8 E4M3FN Scaled Text Encoder",
+                "url": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn_scaled.safetensors",
+                "path": "text_encoders/t5xxl_fp8_e4m3fn_scaled.safetensors",
+                "description": "T5xXL FP8 E4M3FN scaled text encoder for Flux models."
+            },
+            "t5xxl_fp8_e4m3fn": {
+                "name": "T5xXL FP8 E4M3FN Text Encoder",
+                "url": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors",
+                "path": "text_encoders/t5xxl_fp8_e4m3fn.safetensors",
+                "description": "T5xXL FP8 E4M3FN text encoder for Flux models."
             }
         }
     },
@@ -70,11 +82,13 @@ MODEL_CONFIGS = {
             }
         }
     }
-    # Add more model sets here
 }
 
 # Store download status
 download_status = {}
+
+# Configuration file path
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'model_configs.json')
 
 def download_file(url, destination):
     try:
@@ -207,29 +221,48 @@ def delete_model():
     data = request.json
     model_set = data.get('model_set')
     model_id = data.get('model_id')
+    
     if not model_set or not model_id:
         return jsonify({'error': 'Missing fields'}), 400
     if model_set not in MODEL_CONFIGS:
         return jsonify({'error': 'Model set not found'}), 404
     if model_id not in MODEL_CONFIGS[model_set]['models']:
         return jsonify({'error': 'Model ID not found'}), 404
+    
     del MODEL_CONFIGS[model_set]['models'][model_id]
     save_model_configs(MODEL_CONFIGS)
     return jsonify({'status': 'deleted'})
 
-CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'model_configs.json')
-
 def load_model_configs():
+    """Load model configurations from JSON file, fallback to defaults if file doesn't exist"""
     if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return MODEL_CONFIGS
+        try:
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Warning: Could not load {CONFIG_FILE}: {e}")
+            print("Using default model configurations")
+    return DEFAULT_MODEL_CONFIGS.copy()  # Return a copy to avoid modifying the default
 
 def save_model_configs(configs):
-    with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-        json.dump(configs, f, indent=2)
+    """Save model configurations to JSON file"""
+    try:
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(configs, f, indent=2)
+    except IOError as e:
+        print(f"Error saving model configs: {e}")
 
+def initialize_config_file():
+    """Initialize the config file with defaults if it doesn't exist"""
+    if not os.path.exists(CONFIG_FILE):
+        print(f"Creating default model configuration file: {CONFIG_FILE}")
+        save_model_configs(DEFAULT_MODEL_CONFIGS)
+
+# Load model configurations at startup
 MODEL_CONFIGS = load_model_configs()
+
+# Initialize config file if needed
+initialize_config_file()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8866)

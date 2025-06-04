@@ -9,11 +9,11 @@ echo "Current directory: $(pwd)"
 echo "Listing /workspace:"
 ls -la /workspace
 
-# Start Jupyter Notebook (no password, on port 8888)
-echo "Starting Jupyter Notebook..."
-jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password='' &
+# Start JupyterLab (no password, on port 8888) - includes terminal functionality
+echo "Starting JupyterLab..."
+jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --ServerApp.token='' --ServerApp.password='' --ServerApp.allow_origin='*' --ServerApp.allow_remote_access=True &
 JUPYTER_PID=$!
-echo "Jupyter Notebook PID: $JUPYTER_PID"
+echo "JupyterLab PID: $JUPYTER_PID"
 
 # Run ComfyUI installation first
 echo "Running ComfyUI installation..."

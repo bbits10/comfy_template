@@ -37,7 +37,7 @@ RUN ls -la start_services.sh && \
     test -x start_services.sh && \
     echo "start_services.sh is executable"
 
-EXPOSE 8188 8866 8888
+EXPOSE 8188 8866 8765 8888
 
 # Debug entrypoint that handles RunPod volume mounting
 RUN echo "=== Creating debug entrypoint ===" && \

@@ -43,42 +43,36 @@
                 type="text"
                 class="form-control"
                 id="add-new-group-name"
-                placeholder="Enter new group name"
+                placeholder="e.g., SDXL Models"
               />
             </div>
-            <div class="col-md-2">
-              <label for="add-model-id" class="form-label">Model ID</label>
-              <input
-                type="text"
-                class="form-control"
-                id="add-model-id"
-                required
-              />
-            </div>
-            <div class="col-md-2">
-              <label for="add-model-name" class="form-label">Name</label>
+            <div class="col-md-3">
+              <label for="add-model-name" class="form-label">Model Name</label>
               <input
                 type="text"
                 class="form-control"
                 id="add-model-name"
+                placeholder="e.g., Realistic Vision XL v3.0"
                 required
               />
             </div>
-            <div class="col-md-2">
-              <label for="add-model-url" class="form-label">URL</label>
+            <div class="col-md-3">
+              <label for="add-model-url" class="form-label">Download URL</label>
               <input
                 type="text"
                 class="form-control"
                 id="add-model-url"
+                placeholder="https://huggingface.co/user/model/resolve/main/model.safetensors"
                 required
               />
             </div>
-            <div class="col-md-2">
-              <label for="add-model-path" class="form-label">Path</label>
+            <div class="col-md-3">
+              <label for="add-model-path" class="form-label">Save Path</label>
               <input
                 type="text"
                 class="form-control"
                 id="add-model-path"
+                placeholder="checkpoints/realistic_vision_xl_v3.safetensors"
                 required
               />
             </div>
@@ -90,6 +84,7 @@
                 type="text"
                 class="form-control"
                 id="add-model-description"
+                placeholder="High-quality realistic image generation model with improved lighting and details"
               />
             </div>
             <div class="col-12">
@@ -309,14 +304,11 @@
             $("#new-group-name-div").addClass("d-none");
             $("#add-new-group-name").attr("required", false);
           }
-        });
-
-        // Add Model
+        }); // Add Model
         $("#add-model-form").submit(function (e) {
           e.preventDefault();
           let modelSet = $("#add-model-set").val();
           let newGroupName = $("#add-new-group-name").val();
-          let modelId = $("#add-model-id").val();
           const modelInfo = {
             name: $("#add-model-name").val(),
             url: $("#add-model-url").val(),
@@ -333,12 +325,12 @@
             contentType: "application/json",
             data: JSON.stringify({
               model_set: modelSet,
-              model_id: modelId,
+              model_name: modelInfo.name,
               model_info: modelInfo,
               new_group: $("#add-model-set").val() === "__new__",
               new_group_name: newGroupName,
             }),
-            success: function () {
+            success: function (response) {
               $("#add-model-status").text("Model added! Reloading...");
               setTimeout(() => location.reload(), 1000);
             },

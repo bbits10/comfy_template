@@ -164,12 +164,19 @@ def get_model_configs():
 def add_model():
     data = request.json
     model_set = data.get('model_set')
-    model_id = data.get('model_id')
+    model_name = data.get('model_name')
     model_info = data.get('model_info')
     new_group = data.get('new_group', False)
     new_group_name = data.get('new_group_name', None)
-    if not model_set or not model_id or not model_info:
+    
+    if not model_set or not model_name or not model_info:
         return jsonify({'error': 'Missing fields'}), 400
+    
+    # Auto-generate model ID from model name
+    model_id = model_name.lower().replace(' ', '_').replace('-', '_')
+    # Remove special characters and keep only alphanumeric and underscores
+    model_id = ''.join(c for c in model_id if c.isalnum() or c == '_')
+    
     if new_group:
         if not new_group_name:
             return jsonify({'error': 'New group name required'}), 400
@@ -182,11 +189,18 @@ def add_model():
     else:
         if model_set not in MODEL_CONFIGS:
             return jsonify({'error': 'Model set not found'}), 404
-        if model_id in MODEL_CONFIGS[model_set]['models']:
-            return jsonify({'error': 'Model ID already exists'}), 409
+        
+        # Check if model_id already exists, if so, append a number
+        original_id = model_id
+        counter = 1
+        while model_id in MODEL_CONFIGS[model_set]['models']:
+            model_id = f"{original_id}_{counter}"
+            counter += 1
+            
         MODEL_CONFIGS[model_set]['models'][model_id] = model_info
+    
     save_model_configs(MODEL_CONFIGS)
-    return jsonify({'status': 'added'})
+    return jsonify({'status': 'added', 'model_id': model_id})
 
 @app.route('/edit_model', methods=['POST'])
 def edit_model():

@@ -59,6 +59,17 @@ else
     echo "Model Downloader PID: $MODEL_DOWNLOADER_PID"
 fi
 
+# Start the file manager in the background
+echo "Starting file manager..."
+echo "Checking if file_manager.py exists at /workspace/comfy_template/file_manager.py"
+if [ ! -f "/workspace/comfy_template/file_manager.py" ]; then
+    echo "WARNING: /workspace/comfy_template/file_manager.py not found! File manager service will not be available."
+else
+    python /workspace/comfy_template/file_manager.py &
+    FILE_MANAGER_PID=$!
+    echo "File Manager PID: $FILE_MANAGER_PID"
+fi
+
 # Start ComfyUI
 echo "Preparing to start ComfyUI..."
 echo "Checking for ComfyUI directory at /workspace/ComfyUI..."
@@ -100,7 +111,11 @@ echo "--- start_services.sh: Services launched, waiting for processes to exit --
 # If you want to keep the container running until one of them exits:
 # wait -n
 # If you want to wait for all of them (e.g. if they are all background services that should run indefinitely until container stops)
-wait $JUPYTER_PID $MODEL_DOWNLOADER_PID $COMFYUI_PID
+if [ -n "$FILE_MANAGER_PID" ]; then
+    wait $JUPYTER_PID $MODEL_DOWNLOADER_PID $FILE_MANAGER_PID $COMFYUI_PID
+else
+    wait $JUPYTER_PID $MODEL_DOWNLOADER_PID $COMFYUI_PID
+fi
 # If any of the PIDs are not set because a service failed to start, 'wait' might behave unexpectedly.
 # A more robust approach for long-running services is to just 'wait' without PIDs,
 # or use a supervisor process. For now, this should give more insight.

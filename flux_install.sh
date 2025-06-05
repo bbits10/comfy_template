@@ -149,7 +149,17 @@ if [ "$INSTALL_CUSTOM_NODES_DEPENDENCIES" = true ]; then
   cd "$COMFYUI_DIR" # Return to the main ComfyUI directory
 fi
 
-# 8. Download Models
+# 8. Clone FFmpeg source
+echo_section "Cloning FFmpeg source"
+cd "$COMFYUI_DIR"
+if [ ! -d "ffmpeg" ]; then
+  echo "Cloning FFmpeg repository..."
+  git clone https://git.ffmpeg.org/ffmpeg.git
+else
+  echo "FFmpeg directory already exists. Skipping clone."
+fi
+
+# 9. Download Models
 # echo_section "Downloading Models"
 # MODELS_BASE_DIR="$COMFYUI_DIR/models"
 # mkdir -p "$MODELS_BASE_DIR/text_encoders"

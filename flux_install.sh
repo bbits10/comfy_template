@@ -52,7 +52,7 @@ echo_section "Installing additional core dependencies"
 pip install accelerate einops transformers>=4.28.1 safetensors>=0.4.2 aiohttp pyyaml Pillow scipy tqdm psutil tokenizers>=0.13.3
 pip install torchsde
 pip install kornia>=0.7.1 spandrel soundfile sentencepiece
-pip install gguf-node
+pip install imageio-ffmpeg  # For VHS_VideoCombine node
 
 # 5. Install prerequisites for ComfyUI-Manager CLI and other tools
 echo_section "Installing GitPython and Typer (for ComfyUI-Manager CLI)"
@@ -159,7 +159,11 @@ else
   echo "FFmpeg directory already exists. Skipping clone."
 fi
 
-# 9. Download Models
+# 9. Install gguf-node after ComfyUI setup is complete
+echo_section "Installing gguf-node"
+pip install gguf-node
+
+# 10. Download Models
 # echo_section "Downloading Models"
 # MODELS_BASE_DIR="$COMFYUI_DIR/models"
 # mkdir -p "$MODELS_BASE_DIR/text_encoders"

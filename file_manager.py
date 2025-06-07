@@ -563,5 +563,10 @@ def search_files():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/video-calculator')
+def video_calculator():
+    """Serve the video overlap calculator page."""
+    return render_template('video_overlap_calculator.html')
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8765, debug=False)

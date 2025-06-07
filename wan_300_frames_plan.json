@@ -1,0 +1,46 @@
+{
+  "segments_needed": 4,
+  "total_generations": 4,
+  "target_length": 300,
+  "calculated_length": 300,
+  "max_frames_per_gen": 81,
+  "overlap_frames": 8,
+  "effective_frames_per_segment": 73,
+  "segments": [
+    {
+      "segment": 1,
+      "start_frame": 1,
+      "end_frame": 81,
+      "generation_frames": 81,
+      "overlap_with_previous": 0,
+      "note": "First segment (full generation)"
+    },
+    {
+      "segment": 2,
+      "start_frame": 74,
+      "end_frame": 146,
+      "generation_frames": 81,
+      "generation_start_frame": 66,
+      "overlap_with_previous": 8,
+      "note": "Overlaps 8 frames with previous segment"
+    },
+    {
+      "segment": 3,
+      "start_frame": 147,
+      "end_frame": 219,
+      "generation_frames": 81,
+      "generation_start_frame": 139,
+      "overlap_with_previous": 8,
+      "note": "Overlaps 8 frames with previous segment"
+    },
+    {
+      "segment": 4,
+      "start_frame": 220,
+      "end_frame": 292,
+      "generation_frames": 81,
+      "generation_start_frame": 212,
+      "overlap_with_previous": 8,
+      "note": "Overlaps 8 frames with previous segment"
+    }
+  ]
+}

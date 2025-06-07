@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wan Video Overlap Calculator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .calculator-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .results-area {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+        }
+        .segment-card {
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: #ffffff;
+        }
+        .segment-header {
+            font-weight: bold;
+            color: #0d6efd;
+            margin-bottom: 10px;
+        }
+        .overlap-highlight {
+            background-color: #fff3cd;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">
+                    <i class="fas fa-video"></i> Wan Video Overlap Calculator
+                </h1>
+                <p class="text-center text-muted">
+                    Calculate frame overlaps for stitching multiple Wan video generations (max 81 frames each)
+                </p>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="maxFrames" class="form-label">Max Frames per Generation:</label>
+                                <input type="number" class="form-control" id="maxFrames" value="81" min="1" max="200">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="overlapFrames" class="form-label">Overlap Frames:</label>
+                                <input type="number" class="form-control" id="overlapFrames" value="8" min="1" max="20">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Method -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Target Video</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="calcMethod" id="byFrames" value="frames" checked>
+                                <label class="form-check-label" for="byFrames">Calculate by Frames</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="calcMethod" id="byDuration" value="duration">
+                                <label class="form-check-label" for="byDuration">Calculate by Duration</label>
+                            </div>
+                        </div>
+
+                        <div id="framesInput">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="targetFrames" class="form-label">Target Frames:</label>
+                                    <input type="number" class="form-control" id="targetFrames" min="1" placeholder="e.g., 200">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="durationInput" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="duration" class="form-label">Duration (seconds):</label>
+                                    <input type="number" class="form-control" id="duration" step="0.1" min="0.1" placeholder="e.g., 8.5">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="fps" class="form-label">FPS:</label>
+                                    <input type="number" class="form-control" id="fps" value="24" min="1" max="120">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculate Button -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <button type="button" class="btn btn-primary btn-lg" onclick="calculate()">
+                    <i class="fas fa-calculator"></i> Calculate Segments
+                </button>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Generation Plan</h5>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="exportJSON()" id="exportBtn" style="display: none;">
+                            <i class="fas fa-download"></i> Export JSON
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="results"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    
+    <script>
+        let lastResult = null;
+
+        // Toggle input methods
+        document.querySelectorAll('input[name="calcMethod"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'frames') {
+                    document.getElementById('framesInput').style.display = 'block';
+                    document.getElementById('durationInput').style.display = 'none';
+                } else {
+                    document.getElementById('framesInput').style.display = 'none';
+                    document.getElementById('durationInput').style.display = 'block';
+                }
+            });
+        });
+
+        class VideoOverlapCalculator {
+            constructor(maxFrames = 81, overlapFrames = 8) {
+                this.maxFrames = maxFrames;
+                this.overlapFrames = overlapFrames;
+                this.effectiveFrames = maxFrames - overlapFrames;
+            }
+
+            calculateSegments(targetFrames) {
+                if (targetFrames <= this.maxFrames) {
+                    return {
+                        segmentsNeeded: 1,
+                        totalGenerations: 1,
+                        finalLength: targetFrames,
+                        segments: [{
+                            segment: 1,
+                            startFrame: 1,
+                            endFrame: targetFrames,
+                            generationFrames: targetFrames,
+                            overlapWithPrevious: 0,
+                            note: 'Single generation - no overlap needed'
+                        }]
+                    };
+                }
+
+                const remainingFrames = targetFrames - this.maxFrames;
+                const additionalSegments = Math.ceil(remainingFrames / this.effectiveFrames);
+                const totalSegments = 1 + additionalSegments;
+                const finalLength = this.maxFrames + (additionalSegments * this.effectiveFrames);
+
+                const segments = [];
+                let currentStart = 1;
+
+                for (let i = 0; i < totalSegments; i++) {
+                    if (i === 0) {
+                        segments.push({
+                            segment: i + 1,
+                            startFrame: currentStart,
+                            endFrame: currentStart + this.maxFrames - 1,
+                            generationFrames: this.maxFrames,
+                            overlapWithPrevious: 0,
+                            note: 'First segment (full generation)'
+                        });
+                        currentStart += this.effectiveFrames;
+                    } else {
+                        let generationFrames = this.maxFrames;
+                        let endFrame = currentStart + this.effectiveFrames - 1;
+                        
+                        if (i === totalSegments - 1 && endFrame > targetFrames) {
+                            endFrame = targetFrames;
+                            generationFrames = targetFrames - currentStart + this.overlapFrames + 1;
+                        }
+
+                        segments.push({
+                            segment: i + 1,
+                            startFrame: currentStart,
+                            endFrame: endFrame,
+                            generationFrames: generationFrames,
+                            generationStartFrame: currentStart - this.overlapFrames,
+                            overlapWithPrevious: this.overlapFrames,
+                            note: `Overlaps ${this.overlapFrames} frames with previous segment`
+                        });
+                        currentStart += this.effectiveFrames;
+                    }
+                }
+
+                return {
+                    segmentsNeeded: totalSegments,
+                    totalGenerations: totalSegments,
+                    targetLength: targetFrames,
+                    calculatedLength: finalLength,
+                    maxFramesPerGen: this.maxFrames,
+                    overlapFrames: this.overlapFrames,
+                    effectiveFramesPerSegment: this.effectiveFrames,
+                    segments: segments
+                };
+            }
+
+            calculateFromDuration(durationSeconds, fps = 24) {
+                const targetFrames = Math.round(durationSeconds * fps);
+                const result = this.calculateSegments(targetFrames);
+                result.durationSeconds = durationSeconds;
+                result.fps = fps;
+                return result;
+            }
+        }
+
+        function calculate() {
+            try {
+                const maxFrames = parseInt(document.getElementById('maxFrames').value);
+                const overlapFrames = parseInt(document.getElementById('overlapFrames').value);
+                const calculator = new VideoOverlapCalculator(maxFrames, overlapFrames);
+
+                let result;
+                const calcMethod = document.querySelector('input[name="calcMethod"]:checked').value;
+
+                if (calcMethod === 'frames') {
+                    const targetFrames = parseInt(document.getElementById('targetFrames').value);
+                    if (!targetFrames || targetFrames < 1) {
+                        alert('Please enter a valid number of target frames.');
+                        return;
+                    }
+                    result = calculator.calculateSegments(targetFrames);
+                } else {
+                    const duration = parseFloat(document.getElementById('duration').value);
+                    const fps = parseFloat(document.getElementById('fps').value);
+                    if (!duration || duration <= 0 || !fps || fps <= 0) {
+                        alert('Please enter valid duration and FPS values.');
+                        return;
+                    }
+                    result = calculator.calculateFromDuration(duration, fps);
+                }
+
+                lastResult = result;
+                displayResults(result);
+                document.getElementById('exportBtn').style.display = 'inline-block';
+
+            } catch (error) {
+                alert('Error in calculation: ' + error.message);
+            }
+        }
+
+        function displayResults(result) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = '<div class="mb-3">';
+            html += '<h6>Summary:</h6>';
+            html += `<div class="row">`;
+            html += `<div class="col-md-3"><strong>Segments Needed:</strong> ${result.segmentsNeeded}</div>`;
+            html += `<div class="col-md-3"><strong>Target Frames:</strong> ${result.targetLength || result.calculatedLength}</div>`;
+            html += `<div class="col-md-3"><strong>Overlap:</strong> ${result.overlapFrames} frames</div>`;
+            html += `<div class="col-md-3"><strong>Max per Gen:</strong> ${result.maxFramesPerGen} frames</div>`;
+            html += `</div>`;
+            
+            if (result.durationSeconds) {
+                html += `<div class="mt-2 text-muted">Duration: ${result.durationSeconds}s @ ${result.fps} FPS</div>`;
+            }
+            
+            if (result.calculatedLength !== result.targetLength) {
+                html += `<div class="mt-2 text-warning">Actual final length: ${result.calculatedLength} frames</div>`;
+            }
+            html += '</div>';
+
+            html += '<h6>Generation Sequence:</h6>';
+            
+            result.segments.forEach(segment => {
+                html += `<div class="segment-card">`;
+                html += `<div class="segment-header">Segment ${segment.segment}</div>`;
+                html += `<div class="row">`;
+                html += `<div class="col-md-6">`;
+                html += `<strong>Generate:</strong> ${segment.generationFrames} frames<br>`;
+                
+                if (segment.segment === 1) {
+                    html += `<strong>Use:</strong> Frames 1-${segment.endFrame} (all frames)<br>`;
+                    html += `<strong>Source:</strong> Original image`;
+                } else {
+                    html += `<strong>Use:</strong> Frames ${result.overlapFrames + 1}-${segment.generationFrames} <span class="overlap-highlight">(skip first ${segment.overlapWithPrevious} frames)</span><br>`;
+                    html += `<strong>Source:</strong> Frame ${segment.generationStartFrame} from video timeline<br>`;
+                    html += `<strong>Overlap:</strong> <span class="overlap-highlight">${segment.overlapWithPrevious} frames</span> with previous segment`;
+                }
+                
+                html += `</div>`;
+                html += `<div class="col-md-6">`;
+                html += `<strong>Final Position:</strong> Frames ${segment.startFrame}-${segment.endFrame}<br>`;
+                html += `<em>${segment.note}</em>`;
+                html += `</div>`;
+                html += `</div>`;
+                html += `</div>`;
+            });
+
+            resultsDiv.innerHTML = html;
+        }
+
+        function exportJSON() {
+            if (!lastResult) {
+                alert('No data to export. Please calculate first.');
+                return;
+            }
+
+            const dataStr = JSON.stringify(lastResult, null, 2);
+            const blob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'wan_video_generation_plan.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Example calculations on page load
+        window.addEventListener('load', function() {
+            document.getElementById('targetFrames').value = '200';
+            // Uncomment to auto-calculate on load
+            // calculate();
+        });
+    </script>
+</body>
+</html>

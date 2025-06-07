@@ -3,11 +3,15 @@
 # Exit on error
 set -e
 
+# Source installation logger
+source /workspace/comfy_template/installation_logger.sh 2>/dev/null || true
+
 # --- Configuration ---
 COMFYUI_DIR="/workspace/ComfyUI" # Main directory for ComfyUI installation
 UPDATE_COMFY_UI=${1:-true}       # Set to "false" as first script argument to disable ComfyUI git pull
 INSTALL_CUSTOM_NODES_DEPENDENCIES=true
 USE_COMFYUI_MANAGER=true
+INSTALL_SAGEATTENTION=${INSTALL_SAGEATTENTION:-"background"} # "true", "false", or "background"
 
 # --- Script Start ---
 echo "=================================================="
@@ -16,8 +20,13 @@ echo "Target Directory: $COMFYUI_DIR"
 echo "Update ComfyUI: $UPDATE_COMFY_UI"
 echo "Install Custom Nodes & Dependencies: $INSTALL_CUSTOM_NODES_DEPENDENCIES"
 echo "Use ComfyUI Manager: $USE_COMFYUI_MANAGER"
+echo "SageAttention Installation: $INSTALL_SAGEATTENTION"
 echo "=================================================="
 echo
+
+# Log installation start
+log_step "Starting ComfyUI installation and setup"
+update_status "overall" "starting"
 
 # Create parent directory for COMFYUI_DIR if it doesn't exist and navigate
 mkdir -p "$(dirname "$COMFYUI_DIR")"
@@ -31,28 +40,41 @@ echo_section() {
 # 2. Clone or Update ComfyUI
 if [ ! -d "$COMFYUI_DIR" ]; then
   echo_section "Cloning ComfyUI"
+  log_step "Cloning ComfyUI repository"
   git clone https://github.com/comfyanonymous/ComfyUI.git "$COMFYUI_DIR"
   cd "$COMFYUI_DIR"
+  mark_completed "ComfyUI repository cloned"
 else
   cd "$COMFYUI_DIR"
   if [ "$UPDATE_COMFY_UI" = true ]; then
     echo_section "Updating ComfyUI"
+    log_step "Updating ComfyUI repository"
     git pull
+    mark_completed "ComfyUI repository updated"
   else
     echo_section "ComfyUI exists, skipping update as per configuration."
+    log_step "ComfyUI exists, skipping update"
   fi
 fi
 
+update_status "comfyui_core" "completed"
+
 # 3. Install ComfyUI Main Dependencies
 echo_section "Installing ComfyUI main dependencies (from requirements.txt)"
+log_step "Installing ComfyUI main dependencies"
 pip install -r requirements.txt
+mark_completed "ComfyUI main dependencies installed"
+update_status "dependencies_main" "completed"
 
 # 4. Install Additional Core Dependencies (from Colab script)
 echo_section "Installing additional core dependencies"
+log_step "Installing additional core dependencies"
 pip install accelerate einops transformers>=4.28.1 safetensors>=0.4.2 aiohttp pyyaml Pillow scipy tqdm psutil tokenizers>=0.13.3
 pip install torchsde
 pip install kornia>=0.7.1 spandrel soundfile sentencepiece
 pip install imageio-ffmpeg  # For VHS_VideoCombine nodefmpeg  # For VHS_VideoCombine node
+mark_completed "Additional core dependencies installed"
+update_status "dependencies_additional" "completed"
 
 # 5. Install prerequisites for ComfyUI-Manager CLI and other tools
 echo_section "Installing GitPython and Typer (for ComfyUI-Manager CLI)"
@@ -164,20 +186,52 @@ fi
 echo_section "Installing gguf-node"
 pip install gguf-node
 
-# 10. Install SageAttention
-echo_section "Installing SageAttention"
-cd "$COMFYUI_DIR"
-if [ ! -d "SageAttention" ]; then
-  echo "Cloning SageAttention repository..."
-  git clone https://github.com/thu-ml/SageAttention.git
-else
-  echo "SageAttention directory already exists. Updating..."
-  (cd "SageAttention" && git pull)
-fi
-cd "SageAttention"
-echo "Installing SageAttention..."
+# 10. Install SageAttention (Configurable)
+if [ "$INSTALL_SAGEATTENTION" != "false" ]; then
+  echo_section "Setting up SageAttention (mode: $INSTALL_SAGEATTENTION)"
+  cd "$COMFYUI_DIR"
+  if [ ! -d "SageAttention" ]; then
+    echo "Cloning SageAttention repository..."
+    git clone https://github.com/thu-ml/SageAttention.git
+  else
+    echo "SageAttention directory already exists. Updating..."
+    (cd "SageAttention" && git pull)
+  fi
+
+  if [ "$INSTALL_SAGEATTENTION" = "background" ]; then
+    # Create a background installation script
+    cat > install_sageattention.sh << 'EOF'
+#!/bin/bash
+echo "$(date): Starting SageAttention installation in background..."
+source /workspace/comfy_template/installation_logger.sh 2>/dev/null || true
+log_step "SageAttention background installation started"
+cd /workspace/ComfyUI/SageAttention
 python setup.py install
-cd "$COMFYUI_DIR" # Return to the main ComfyUI directory
+mark_completed "SageAttention installation completed"
+update_status "sageattention" "completed"
+echo "$(date): SageAttention installation completed!" >> /workspace/sageattention_install.log
+EOF
+
+    chmod +x install_sageattention.sh
+    echo "SageAttention will be installed in the background. Check /workspace/sageattention_install.log for progress."
+    log_step "Starting SageAttention installation in background"
+    nohup ./install_sageattention.sh > /workspace/sageattention_install.log 2>&1 &
+    update_status "sageattention" "installing_background"
+  else
+    # Install synchronously (original behavior)
+    cd "SageAttention"
+    echo "Installing SageAttention synchronously (this may take 15-20 minutes)..."
+    log_step "Installing SageAttention synchronously (15-20 minutes)"
+    update_status "sageattention" "installing_sync"
+    python setup.py install
+    mark_completed "SageAttention installation completed"
+    update_status "sageattention" "completed"
+  fi
+
+  cd "$COMFYUI_DIR" # Return to the main ComfyUI directory
+else
+  echo_section "Skipping SageAttention installation (INSTALL_SAGEATTENTION=false)"
+fi
 
 # 11. Download Models
 # echo_section "Downloading Models"
@@ -205,6 +259,11 @@ echo
 echo "Ensure your RunPod instance's HTTP port is mapped to 8188."
 echo "For example, if RunPod exposes port 8080 externally, set it to proxy to 8188 internally."
 echo
+
+# Log completion
+mark_completed "ComfyUI installation and setup completed"
+update_status "overall" "completed"
+log_step "Installation script finished successfully"
 
 # Optional: Automatically start ComfyUI
 # echo "Starting ComfyUI..."

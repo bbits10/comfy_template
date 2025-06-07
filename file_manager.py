@@ -568,5 +568,85 @@ def video_calculator():
     """Serve the video overlap calculator page."""
     return render_template('video_overlap_calculator.html')
 
+# Add installation status functions
+def get_installation_status():
+    """Get current installation status"""
+    status = {
+        'comfyui_ready': False,
+        'sageattention_complete': False,
+        'log': '',
+        'installation_complete': False,
+        'processes': {
+            'model_downloader': False,
+            'file_manager': True,  # This service is running
+            'comfyui': False
+        },
+        'progress': {}
+    }
+    
+    # Check installation progress file
+    progress_log = "/workspace/installation_progress.log"
+    if os.path.exists(progress_log):
+        try:
+            with open(progress_log, 'r') as f:
+                status['log'] = f.read()
+        except:
+            pass
+    
+    # Check installation status JSON
+    status_file = "/workspace/installation_status.json"
+    if os.path.exists(status_file):
+        try:
+            with open(status_file, 'r') as f:
+                progress_data = json.load(f)
+                status['progress'] = progress_data
+                status['installation_complete'] = progress_data.get('overall') == 'completed'
+        except:
+            pass
+    
+    # Check if ComfyUI is ready
+    comfyui_path = "/workspace/ComfyUI/main.py"
+    if os.path.exists(comfyui_path):
+        # Check if ComfyUI process is running
+        try:
+            result = subprocess.run(['pgrep', '-f', 'python.*main.py.*--port.*8188'], 
+                                  capture_output=True, text=True)
+            status['comfyui_ready'] = result.returncode == 0
+            status['processes']['comfyui'] = result.returncode == 0
+        except:
+            pass
+    
+    # Check SageAttention installation
+    sageattention_log = "/workspace/sageattention_install.log"
+    if os.path.exists(sageattention_log):
+        try:
+            with open(sageattention_log, 'r') as f:
+                log_content = f.read()
+                status['sageattention_complete'] = "installation completed!" in log_content.lower()
+                if not status['log']:  # If no main log, use SageAttention log
+                    status['log'] = log_content
+        except:
+            pass
+    
+    # Check model downloader process
+    try:
+        result = subprocess.run(['pgrep', '-f', 'model_downloader.py'], 
+                              capture_output=True, text=True)
+        status['processes']['model_downloader'] = result.returncode == 0
+    except:
+        pass
+    
+    return status
+
+@app.route('/installation-status')
+def installation_status():
+    """Show installation status page"""
+    return render_template('installation_status.html')
+
+@app.route('/api/installation-status')
+def api_installation_status():
+    """API endpoint for installation status"""
+    return jsonify(get_installation_status())
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8765, debug=False)

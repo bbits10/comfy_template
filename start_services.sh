@@ -17,8 +17,29 @@ JUPYTER_PID=$!
 echo "JupyterLab PID: $JUPYTER_PID"
 echo "JupyterLab started from directory: $(pwd)"
 
-# Run ComfyUI installation first
-echo "Running ComfyUI installation..."
+# Start the file manager and model downloader early (before ComfyUI installation)
+echo "Starting file manager early..."
+if [ -f "/workspace/comfy_template/file_manager.py" ]; then
+    python /workspace/comfy_template/file_manager.py &
+    FILE_MANAGER_PID=$!
+    echo "File Manager PID: $FILE_MANAGER_PID"
+else
+    echo "WARNING: /workspace/comfy_template/file_manager.py not found! File manager service will not be available."
+fi
+
+echo "Starting model downloader early..."
+if [ -f "/workspace/comfy_template/model_downloader.py" ]; then
+    python /workspace/comfy_template/model_downloader.py &
+    MODEL_DOWNLOADER_PID=$!
+    echo "Model Downloader PID: $MODEL_DOWNLOADER_PID"
+else
+    echo "WARNING: /workspace/comfy_template/model_downloader.py not found!"
+fi
+
+# Run ComfyUI installation in background
+echo "Running ComfyUI installation in background..."
+# Run ComfyUI installation in background
+echo "Running ComfyUI installation in background..."
 echo "Checking if flux_install.sh exists at /workspace/comfy_template/flux_install.sh"
 if [ ! -f "/workspace/comfy_template/flux_install.sh" ]; then
     echo "ERROR: /workspace/comfy_template/flux_install.sh not found!"
@@ -26,9 +47,13 @@ if [ ! -f "/workspace/comfy_template/flux_install.sh" ]; then
 else
     echo "Making flux_install.sh executable..."
     chmod +x /workspace/comfy_template/flux_install.sh
-    echo "Running flux_install.sh..."
-    bash /workspace/comfy_template/flux_install.sh
-    echo "ComfyUI installation completed successfully."
+    echo "Running flux_install.sh in background..."
+    # Set environment variable to install SageAttention in background by default
+    export INSTALL_SAGEATTENTION="background"
+    bash /workspace/comfy_template/flux_install.sh &
+    INSTALL_PID=$!
+    echo "ComfyUI installation PID: $INSTALL_PID"
+    echo "ComfyUI installation is running in background. Web services are available immediately."
 fi
 
 # Create symbolic link for ComfyUI visibility in template directory
@@ -43,31 +68,39 @@ else
 fi
 
 # Create model directories after ComfyUI installation
+echo "Waiting for ComfyUI installation to complete..."
+wait $INSTALL_PID
+echo "ComfyUI installation completed successfully."
+
 echo "Creating additional model directories..."
 mkdir -p /workspace/ComfyUI/models/{checkpoints,clip,clip_vision,controlnet,diffusers,embeddings,loras,upscale_models,vae,unet,configs}
 echo "Model directories created."
 
-# Start the model downloader in the background
-echo "Starting model downloader..."
-echo "Checking if model_downloader.py exists at /workspace/comfy_template/model_downloader.py"
-if [ ! -f "/workspace/comfy_template/model_downloader.py" ]; then
-    echo "ERROR: /workspace/comfy_template/model_downloader.py not found!"
-    # exit 1 # Decide if this is fatal
-else
-    python /workspace/comfy_template/model_downloader.py &
-    MODEL_DOWNLOADER_PID=$!
-    echo "Model Downloader PID: $MODEL_DOWNLOADER_PID"
+# Start the model downloader in the background (if not already started)
+if [ -z "$MODEL_DOWNLOADER_PID" ]; then
+    echo "Starting model downloader..."
+    echo "Checking if model_downloader.py exists at /workspace/comfy_template/model_downloader.py"
+    if [ ! -f "/workspace/comfy_template/model_downloader.py" ]; then
+        echo "ERROR: /workspace/comfy_template/model_downloader.py not found!"
+        # exit 1 # Decide if this is fatal
+    else
+        python /workspace/comfy_template/model_downloader.py &
+        MODEL_DOWNLOADER_PID=$!
+        echo "Model Downloader PID: $MODEL_DOWNLOADER_PID"
+    fi
 fi
 
-# Start the file manager in the background
-echo "Starting file manager..."
-echo "Checking if file_manager.py exists at /workspace/comfy_template/file_manager.py"
-if [ ! -f "/workspace/comfy_template/file_manager.py" ]; then
-    echo "WARNING: /workspace/comfy_template/file_manager.py not found! File manager service will not be available."
-else
-    python /workspace/comfy_template/file_manager.py &
-    FILE_MANAGER_PID=$!
-    echo "File Manager PID: $FILE_MANAGER_PID"
+# Start the file manager in the background (if not already started)
+if [ -z "$FILE_MANAGER_PID" ]; then
+    echo "Starting file manager..."
+    echo "Checking if file_manager.py exists at /workspace/comfy_template/file_manager.py"
+    if [ ! -f "/workspace/comfy_template/file_manager.py" ]; then
+        echo "WARNING: /workspace/comfy_template/file_manager.py not found! File manager service will not be available."
+    else
+        python /workspace/comfy_template/file_manager.py &
+        FILE_MANAGER_PID=$!
+        echo "File Manager PID: $FILE_MANAGER_PID"
+    fi
 fi
 
 # Start ComfyUI

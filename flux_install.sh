@@ -52,7 +52,7 @@ echo_section "Installing additional core dependencies"
 pip install accelerate einops transformers>=4.28.1 safetensors>=0.4.2 aiohttp pyyaml Pillow scipy tqdm psutil tokenizers>=0.13.3
 pip install torchsde
 pip install kornia>=0.7.1 spandrel soundfile sentencepiece
-pip install imageio-ffmpeg  # For VHS_VideoCombine node
+pip install imageio-ffmpeg  # For VHS_VideoCombine nodefmpeg  # For VHS_VideoCombine node
 
 # 5. Install prerequisites for ComfyUI-Manager CLI and other tools
 echo_section "Installing GitPython and Typer (for ComfyUI-Manager CLI)"
@@ -103,6 +103,7 @@ if [ "$INSTALL_CUSTOM_NODES_DEPENDENCIES" = true ]; then
     "https://github.com/pollockjj/ComfyUI-MultiGPU"
     "https://github.com/daxcay/ComfyUI-JDCN"
     "https://github.com/city96/ComfyUI-GGUF"
+    "https://github.com/calcuis/gguf"
     # was-node-suite-comfyui is handled separately below
     # "https://github.com/thu-ml/SageAttention.git" # Note .git suffix - REMOVED
   )
@@ -163,7 +164,22 @@ fi
 echo_section "Installing gguf-node"
 pip install gguf-node
 
-# 10. Download Models
+# 10. Install SageAttention
+echo_section "Installing SageAttention"
+cd "$COMFYUI_DIR"
+if [ ! -d "SageAttention" ]; then
+  echo "Cloning SageAttention repository..."
+  git clone https://github.com/thu-ml/SageAttention.git
+else
+  echo "SageAttention directory already exists. Updating..."
+  (cd "SageAttention" && git pull)
+fi
+cd "SageAttention"
+echo "Installing SageAttention..."
+python setup.py install
+cd "$COMFYUI_DIR" # Return to the main ComfyUI directory
+
+# 11. Download Models
 # echo_section "Downloading Models"
 # MODELS_BASE_DIR="$COMFYUI_DIR/models"
 # mkdir -p "$MODELS_BASE_DIR/text_encoders"

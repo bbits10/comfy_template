@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>ComfyUI File Manager</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Advanced File Manager - ComfyUI</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -11,254 +13,596 @@
       rel="stylesheet"
     />
     <style>
-      .file-icon {
-        width: 24px;
-        text-align: center;
-      }
-      .folder-row:hover,
-      .file-row:hover {
+      body {
         background-color: #f8f9fa;
+        font-size: 14px;
+      }
+
+      .sidebar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 0;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .sidebar .nav-link {
+        color: rgba(255, 255, 255, 0.8);
+        padding: 12px 20px;
+        border-radius: 0;
+        transition: all 0.3s ease;
+      }
+
+      .sidebar .nav-link:hover,
+      .sidebar .nav-link.active {
+        color: white;
+        background-color: rgba(255, 255, 255, 0.1);
+        transform: translateX(5px);
+      }
+
+      .sidebar .nav-link i {
+        width: 20px;
+        margin-right: 10px;
+      }
+
+      .toolbar {
+        background: white;
+        border-bottom: 1px solid #dee2e6;
+        padding: 15px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .breadcrumb {
+        background: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .breadcrumb-item a {
+        color: #495057;
+        text-decoration: none;
+        transition: color 0.3s ease;
+      }
+
+      .breadcrumb-item a:hover {
+        color: #007bff;
+      }
+
+      .file-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        padding: 20px 0;
+      }
+
+      .file-item {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .file-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        border-color: #007bff;
+      }
+
+      .file-item.selected {
+        border-color: #007bff;
+        background-color: #f8f9ff;
+      }
+
+      .file-icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .file-icon.folder {
+        color: #ffc107;
+      }
+      .file-icon.image {
+        color: #28a745;
+      }
+      .file-icon.video {
+        color: #dc3545;
+      }
+      .file-icon.audio {
+        color: #6f42c1;
+      }
+      .file-icon.text {
+        color: #17a2b8;
+      }
+      .file-icon.code {
+        color: #fd7e14;
+      }
+      .file-icon.pdf {
+        color: #dc3545;
+      }
+      .file-icon.archive {
+        color: #6c757d;
+      }
+      .file-icon.model {
+        color: #e83e8c;
+      }
+      .file-icon.file {
+        color: #495057;
+      }
+
+      .file-name {
+        font-weight: 500;
+        margin-bottom: 5px;
+        word-break: break-all;
+        font-size: 0.9rem;
+      }
+
+      .file-info {
+        font-size: 0.75rem;
+        color: #6c757d;
+        line-height: 1.3;
+      }
+
+      .file-list {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .file-list-header {
+        background: #f8f9fa;
+        padding: 12px 15px;
+        border-bottom: 1px solid #dee2e6;
+        font-weight: 600;
+        display: grid;
+        grid-template-columns: 40px 1fr 100px 120px 80px 40px;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .file-list-item {
+        padding: 10px 15px;
+        border-bottom: 1px solid #f1f3f4;
+        display: grid;
+        grid-template-columns: 40px 1fr 100px 120px 80px 40px;
+        gap: 10px;
+        align-items: center;
+        transition: background-color 0.2s ease;
         cursor: pointer;
       }
-      .breadcrumb-item a {
-        text-decoration: none;
+
+      .file-list-item:hover {
+        background-color: #f8f9fa;
       }
+
+      .file-list-item.selected {
+        background-color: #e3f2fd;
+      }
+
+      .sort-header {
+        cursor: pointer;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .sort-header:hover {
+        color: #007bff;
+      }
+
       .storage-info {
-        font-size: 0.9em;
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
+
       .progress {
-        height: 20px;
+        height: 8px;
+        border-radius: 4px;
       }
-      .btn-sm {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
+
+      .modal-backdrop {
+        backdrop-filter: blur(3px);
       }
-      .table-responsive {
-        max-height: 60vh;
-        overflow-y: auto;
+
+      .btn {
+        border-radius: 6px;
+        transition: all 0.3s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .search-box {
+        position: relative;
+      }
+
+      .search-box .form-control {
+        padding-left: 35px;
+        border-radius: 20px;
+      }
+
+      .search-box .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+      }
+
+      .upload-zone {
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        padding: 40px;
+        text-align: center;
+        background: #f8f9fa;
+        transition: all 0.3s ease;
+      }
+
+      .upload-zone:hover,
+      .upload-zone.dragover {
+        border-color: #007bff;
+        background: #f0f8ff;
+      }
+
+      .context-menu {
+        position: absolute;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        min-width: 180px;
+        display: none;
+      }
+
+      .context-menu-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f3f4;
+        transition: background-color 0.2s ease;
+      }
+
+      .context-menu-item:last-child {
+        border-bottom: none;
+      }
+
+      .context-menu-item:hover {
+        background-color: #f8f9fa;
+      }
+
+      .context-menu-item i {
+        width: 16px;
+        margin-right: 10px;
+      }
+
+      .selection-bar {
+        background: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .view-toggle {
+        display: flex;
+        gap: 5px;
+      }
+
+      .view-toggle .btn {
+        padding: 8px 12px;
+      }
+
+      @media (max-width: 768px) {
+        .file-grid {
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          gap: 10px;
+        }
+
+        .file-list-header,
+        .file-list-item {
+          grid-template-columns: 30px 1fr 80px 30px;
+        }
+
+        .file-list-header .d-none.d-md-block,
+        .file-list-item .d-none.d-md-block {
+          display: none !important;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="container-fluid mt-3">
-      <div class="row">
-        <div class="col-12">
-          <h1 class="mb-3">
-            <i class="fas fa-folder-open"></i> ComfyUI File Manager
-          </h1>
+    <div class="container-fluid h-100">
+      <div class="row h-100">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 sidebar">
+          <div class="p-3">
+            <h5 class="text-white mb-3">
+              <i class="fas fa-folder-open"></i>
+              File Manager
+            </h5>
+          </div>
+          <nav class="nav flex-column">
+            <a class="nav-link" href="#" onclick="navigateTo('/workspace')">
+              <i class="fas fa-home"></i>
+              Workspace
+            </a>
+            <a
+              class="nav-link active"
+              href="#"
+              onclick="navigateTo('/workspace/ComfyUI/output')"
+            >
+              <i class="fas fa-image"></i>
+              Output
+            </a>
+            <a
+              class="nav-link"
+              href="#"
+              onclick="navigateTo('/workspace/ComfyUI/input')"
+            >
+              <i class="fas fa-upload"></i>
+              Input
+            </a>
+            <a
+              class="nav-link"
+              href="#"
+              onclick="navigateTo('/workspace/ComfyUI/models')"
+            >
+              <i class="fas fa-brain"></i>
+              Models
+            </a>
+            <a
+              class="nav-link"
+              href="#"
+              onclick="navigateTo('/workspace/ComfyUI/custom_nodes')"
+            >
+              <i class="fas fa-puzzle-piece"></i>
+              Custom Nodes
+            </a>
+            <a class="nav-link" href="#" onclick="navigateTo('/tmp')">
+              <i class="fas fa-clock"></i>
+              Temp
+            </a>
+          </nav>
 
-          <!-- Storage Information -->
-          <div class="card mb-4">
-            <div class="card-body">
-              <h5 class="card-title">Storage Information</h5>
-              <div id="storage-info" class="storage-info">
-                <div class="row">
-                  <div class="col-md-4">
-                    <strong>Output Folder:</strong>
-                    <span id="output-size">Loading...</span>
-                  </div>
-                  <div class="col-md-4">
-                    <strong>Total Files:</strong>
-                    <span id="file-count">Loading...</span>
-                  </div>
-                  <div class="col-md-4">
-                    <strong>Disk Usage:</strong>
-                    <span id="disk-usage">Loading...</span>
-                  </div>
-                </div>
-                <div class="mt-2">
-                  <div class="progress">
-                    <div
-                      id="disk-progress"
-                      class="progress-bar"
-                      role="progressbar"
-                      style="width: 0%"
-                    ></div>
-                  </div>
-                  <small class="text-muted">
-                    <span id="disk-free">0 B</span> free of
-                    <span id="disk-total">0 B</span>
-                  </small>
-                </div>
+          <!-- Storage Info -->
+          <div class="p-3 mt-auto">
+            <div class="storage-info" id="storageInfo">
+              <div
+                class="d-flex justify-content-between align-items-center mb-2"
+              >
+                <small class="text-white-50">Storage</small>
+                <i
+                  class="fas fa-sync-alt text-white-50"
+                  style="cursor: pointer"
+                  onclick="updateStorageInfo()"
+                ></i>
+              </div>
+              <div class="progress mb-2">
+                <div
+                  class="progress-bar"
+                  role="progressbar"
+                  style="width: 0%"
+                ></div>
+              </div>
+              <div class="d-flex justify-content-between">
+                <small class="text-white-50" id="usedSpace">Loading...</small>
+                <small class="text-white-50" id="totalSpace"></small>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Navigation and Actions -->
-          <div class="card mb-4">
-            <div class="card-body">
-              <!-- Breadcrumb Navigation -->
-              <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-3">
-                  <li class="breadcrumb-item">
-                    <a href="?path="><i class="fas fa-home"></i> Output</a>
-                  </li>
-                  {% for breadcrumb in breadcrumbs %}
-                  <li class="breadcrumb-item">
-                    <a href="?path={{ breadcrumb.path }}"
-                      >{{ breadcrumb.name }}</a
-                    >
-                  </li>
-                  {% endfor %}
-                </ol>
-              </nav>
-
-              <!-- Action Buttons -->
-              <div class="row">
-                <div class="col-md-8">
-                  <button
-                    class="btn btn-primary btn-sm"
-                    onclick="refreshPage()"
-                  >
-                    <i class="fas fa-sync-alt"></i> Refresh
-                  </button>
-                  <button
-                    class="btn btn-success btn-sm"
-                    onclick="showCreateFolderModal()"
-                  >
-                    <i class="fas fa-folder-plus"></i> New Folder
-                  </button>
-                  {% if current_path %}
-                  <a
-                    href="/download_folder?path={{ current_path }}"
-                    class="btn btn-info btn-sm"
-                  >
-                    <i class="fas fa-download"></i> Download Folder as ZIP
-                  </a>
-                  {% endif %}
-                </div>
-                <div class="col-md-4 text-end">
-                  <button class="btn btn-warning btn-sm" onclick="selectAll()">
-                    <i class="fas fa-check-square"></i> Select All
-                  </button>
-                  <button
-                    class="btn btn-danger btn-sm"
-                    onclick="deleteSelected()"
-                  >
-                    <i class="fas fa-trash"></i> Delete Selected
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- File Listing -->
-          <div class="card">
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-hover">
-                  <thead>
-                    <tr>
-                      <th width="40">
-                        <input
-                          type="checkbox"
-                          id="select-all-checkbox"
-                          onchange="toggleSelectAll()"
-                        />
-                      </th>
-                      <th width="50"></th>
-                      <th>Name</th>
-                      <th width="120">Size</th>
-                      <th width="150">Modified</th>
-                      <th width="120">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% if contents|length == 0 %}
-                    <tr>
-                      <td colspan="6" class="text-center text-muted py-4">
-                        <i class="fas fa-folder-open fa-3x mb-3"></i><br />
-                        No files or folders found
-                      </td>
-                    </tr>
-                    {% endif %} {% for item in contents %}
-                    <tr
-                      class="{{ 'folder-row' if item.type == 'folder' else 'file-row' }}"
-                      data-path="{{ current_path }}/{{ item.name if current_path else item.name }}"
-                    >
-                      <td>
-                        <input
-                          type="checkbox"
-                          class="item-checkbox"
-                          value="{{ current_path }}/{{ item.name if current_path else item.name }}"
-                        />
-                      </td>
-                      <td class="file-icon">
-                        {% if item.type == 'folder' %}
-                        <i class="fas fa-folder text-warning"></i>
-                        {% elif item.name.lower().endswith(('.png', '.jpg',
-                        '.jpeg', '.gif', '.bmp', '.webp')) %}
-                        <i class="fas fa-image text-primary"></i>
-                        {% elif item.name.lower().endswith(('.mp4', '.avi',
-                        '.mov', '.webm')) %}
-                        <i class="fas fa-video text-success"></i>
-                        {% elif item.name.lower().endswith(('.zip', '.rar',
-                        '.7z', '.tar', '.gz')) %}
-                        <i class="fas fa-file-archive text-secondary"></i>
-                        {% else %}
-                        <i class="fas fa-file text-info"></i>
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if item.type == 'folder' %}
-                        <a
-                          href="?path={{ current_path }}/{{ item.name if current_path else item.name }}"
-                          class="text-decoration-none"
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 p-0">
+          <!-- Toolbar -->
+          <div class="toolbar">
+            <div class="container-fluid">
+              <div class="row align-items-center">
+                <div class="col-md-6">
+                  <!-- Breadcrumb -->
+                  <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb" id="breadcrumb">
+                      <li class="breadcrumb-item">
+                        <a href="#" onclick="navigateTo('/workspace')"
+                          >workspace</a
                         >
-                          <strong>{{ item.name }}</strong>
-                          <small class="text-muted"
-                            >({{ item.file_count }} files)</small
+                      </li>
+                    </ol>
+                  </nav>
+                </div>
+                <div class="col-md-6">
+                  <div
+                    class="d-flex justify-content-end align-items-center gap-2"
+                  >
+                    <!-- Search -->
+                    <div class="search-box" style="width: 200px">
+                      <i class="fas fa-search search-icon"></i>
+                      <input
+                        type="text"
+                        class="form-control form-control-sm"
+                        placeholder="Search files..."
+                        id="searchInput"
+                      />
+                    </div>
+
+                    <!-- View Toggle -->
+                    <div class="view-toggle">
+                      <button
+                        class="btn btn-sm btn-outline-secondary active"
+                        id="gridView"
+                        onclick="setView('grid')"
+                      >
+                        <i class="fas fa-th"></i>
+                      </button>
+                      <button
+                        class="btn btn-sm btn-outline-secondary"
+                        id="listView"
+                        onclick="setView('list')"
+                      >
+                        <i class="fas fa-list"></i>
+                      </button>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="dropdown">
+                      <button
+                        class="btn btn-sm btn-primary dropdown-toggle"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                      >
+                        <i class="fas fa-plus"></i> New
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li>
+                          <a
+                            class="dropdown-item"
+                            href="#"
+                            onclick="showCreateFolder()"
                           >
-                        </a>
-                        {% else %}
-                        <span>{{ item.name }}</span>
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if item.type == 'folder' %}
-                        <small class="text-muted">Folder</small>
-                        {% else %} {{ format_size(item.size) }} {% endif %}
-                      </td>
-                      <td>
-                        <small>{{ item.modified }}</small>
-                      </td>
-                      <td>
-                        {% if item.type == 'folder' %}
-                        <a
-                          href="/download_folder?path={{ current_path }}/{{ item.name if current_path else item.name }}"
-                          class="btn btn-sm btn-outline-info"
-                          title="Download as ZIP"
-                        >
-                          <i class="fas fa-download"></i>
-                        </a>
-                        {% else %}
-                        <a
-                          href="/download?path={{ current_path }}/{{ item.name if current_path else item.name }}"
-                          class="btn btn-sm btn-outline-primary"
-                          title="Download"
-                        >
-                          <i class="fas fa-download"></i>
-                        </a>
-                        {% endif %}
-                        <button
-                          class="btn btn-sm btn-outline-danger"
-                          onclick="deleteItem('{{ current_path }}/{{ item.name if current_path else item.name }}')"
-                          title="Delete"
-                        >
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+                            <i class="fas fa-folder-plus"></i> New Folder
+                          </a>
+                        </li>
+                        <li>
+                          <a
+                            class="dropdown-item"
+                            href="#"
+                            onclick="showUpload()"
+                          >
+                            <i class="fas fa-upload"></i> Upload Files
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Selection Bar -->
+          <div class="container-fluid">
+            <div class="selection-bar" id="selectionBar">
+              <div><span id="selectionCount">0</span> items selected</div>
+              <div class="d-flex gap-2">
+                <button
+                  class="btn btn-sm btn-light"
+                  onclick="downloadSelected()"
+                >
+                  <i class="fas fa-download"></i> Download
+                </button>
+                <button
+                  class="btn btn-sm btn-danger"
+                  onclick="deleteSelected()"
+                >
+                  <i class="fas fa-trash"></i> Delete
+                </button>
+                <button
+                  class="btn btn-sm btn-secondary"
+                  onclick="clearSelection()"
+                >
+                  <i class="fas fa-times"></i> Clear
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- File Content -->
+          <div class="container-fluid">
+            <!-- Loading -->
+            <div id="loading" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <div class="mt-2">Loading files...</div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="text-center py-5" style="display: none">
+              <i
+                class="fas fa-folder-open text-muted"
+                style="font-size: 4rem"
+              ></i>
+              <h5 class="mt-3 text-muted">This folder is empty</h5>
+              <p class="text-muted">
+                Upload files or create a new folder to get started
+              </p>
+              <button class="btn btn-primary" onclick="showUpload()">
+                <i class="fas fa-upload"></i> Upload Files
+              </button>
+            </div>
+
+            <!-- Grid View -->
+            <div id="fileGrid" class="file-grid" style="display: none"></div>
+
+            <!-- List View -->
+            <div id="fileList" class="file-list" style="display: none">
+              <div class="file-list-header">
+                <input type="checkbox" id="selectAll" />
+                <div class="sort-header" onclick="sortBy('name')">
+                  Name <i class="fas fa-sort" id="sortName"></i>
+                </div>
+                <div
+                  class="sort-header d-none d-md-block"
+                  onclick="sortBy('size')"
+                >
+                  Size <i class="fas fa-sort" id="sortSize"></i>
+                </div>
+                <div
+                  class="sort-header d-none d-md-block"
+                  onclick="sortBy('modified')"
+                >
+                  Modified <i class="fas fa-sort" id="sortModified"></i>
+                </div>
+                <div
+                  class="sort-header d-none d-md-block"
+                  onclick="sortBy('type')"
+                >
+                  Type <i class="fas fa-sort" id="sortType"></i>
+                </div>
+                <div></div>
+              </div>
+              <div id="fileListContent"></div>
+            </div>
+
+            <!-- Search Results -->
+            <div id="searchResults" style="display: none">
+              <h6 class="mb-3">Search Results</h6>
+              <div id="searchResultsContent"></div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Context Menu -->
+    <div class="context-menu" id="contextMenu">
+      <div class="context-menu-item" onclick="downloadFile()">
+        <i class="fas fa-download"></i> Download
+      </div>
+      <div class="context-menu-item" onclick="renameFile()">
+        <i class="fas fa-edit"></i> Rename
+      </div>
+      <div class="context-menu-item" onclick="deleteFile()">
+        <i class="fas fa-trash"></i> Delete
+      </div>
+    </div>
+
+    <!-- Modals -->
     <!-- Create Folder Modal -->
     <div class="modal fade" id="createFolderModal" tabindex="-1">
       <div class="modal-dialog">
@@ -272,18 +616,12 @@
             ></button>
           </div>
           <div class="modal-body">
-            <form id="create-folder-form">
-              <div class="mb-3">
-                <label for="folder-name" class="form-label">Folder Name</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="folder-name"
-                  placeholder="Enter folder name"
-                  required
-                />
-              </div>
-            </form>
+            <input
+              type="text"
+              class="form-control"
+              id="folderNameInput"
+              placeholder="Folder name"
+            />
           </div>
           <div class="modal-footer">
             <button
@@ -298,7 +636,112 @@
               class="btn btn-primary"
               onclick="createFolder()"
             >
-              Create Folder
+              Create
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div class="modal fade" id="uploadModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Upload Files</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="upload-zone" id="uploadZone">
+              <i
+                class="fas fa-cloud-upload-alt text-muted"
+                style="font-size: 3rem"
+              ></i>
+              <h6 class="mt-3">Drag & drop files here</h6>
+              <p class="text-muted">or click to select files</p>
+              <input
+                type="file"
+                id="fileInput"
+                multiple
+                style="display: none"
+              />
+              <button
+                class="btn btn-outline-primary"
+                onclick="document.getElementById('fileInput').click()"
+              >
+                Select Files
+              </button>
+            </div>
+            <div id="uploadProgress" style="display: none">
+              <div class="progress mt-3">
+                <div
+                  class="progress-bar"
+                  role="progressbar"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              id="uploadBtn"
+              onclick="uploadFiles()"
+              style="display: none"
+            >
+              Upload
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rename Modal -->
+    <div class="modal fade" id="renameModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Rename Item</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <input
+              type="text"
+              class="form-control"
+              id="renameInput"
+              placeholder="New name"
+            />
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="confirmRename()"
+            >
+              Rename
             </button>
           </div>
         </div>
@@ -306,200 +749,884 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-      // Load storage info on page load
-      $(document).ready(function () {
-        loadStorageInfo();
+      // Global variables
+      let currentPath = "{{ current_path }}";
+      let currentView = "grid";
+      let selectedItems = new Set();
+      let currentSort = "name";
+      let currentOrder = "asc";
+      let contextMenuItem = null;
+      let searchTimeout = null;
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", function () {
+        loadDirectory(currentPath);
+        updateStorageInfo();
+
+        // Setup event listeners
+        setupEventListeners();
       });
 
-      function loadStorageInfo() {
-        $.get("/get_storage_info")
-          .done(function (data) {
-            $("#output-size").text(data.output_size_formatted);
-            $("#file-count").text(data.file_count);
-            $("#disk-usage").text(data.disk_used_formatted);
-            $("#disk-free").text(data.disk_free_formatted);
-            $("#disk-total").text(data.disk_total_formatted);
+      function setupEventListeners() {
+        // Search input
+        document
+          .getElementById("searchInput")
+          .addEventListener("input", function () {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
 
-            const usagePercent = (
-              (data.disk_used / data.disk_total) *
-              100
-            ).toFixed(1);
-            $("#disk-progress")
-              .css("width", usagePercent + "%")
-              .text(usagePercent + "%");
+            if (query.length >= 2) {
+              searchTimeout = setTimeout(() => searchFiles(query), 300);
+            } else if (query.length === 0) {
+              hideSearchResults();
+              loadDirectory(currentPath);
+            }
+          });
 
-            if (usagePercent > 90) {
-              $("#disk-progress")
-                .removeClass("bg-success bg-warning")
-                .addClass("bg-danger");
-            } else if (usagePercent > 70) {
-              $("#disk-progress")
-                .removeClass("bg-success bg-danger")
-                .addClass("bg-warning");
+        // File input change
+        document
+          .getElementById("fileInput")
+          .addEventListener("change", function () {
+            const files = this.files;
+            if (files.length > 0) {
+              document.getElementById("uploadBtn").style.display = "block";
+            }
+          });
+
+        // Upload zone drag and drop
+        const uploadZone = document.getElementById("uploadZone");
+        uploadZone.addEventListener("dragover", function (e) {
+          e.preventDefault();
+          this.classList.add("dragover");
+        });
+
+        uploadZone.addEventListener("dragleave", function (e) {
+          e.preventDefault();
+          this.classList.remove("dragover");
+        });
+
+        uploadZone.addEventListener("drop", function (e) {
+          e.preventDefault();
+          this.classList.remove("dragover");
+          const files = e.dataTransfer.files;
+          document.getElementById("fileInput").files = files;
+          if (files.length > 0) {
+            document.getElementById("uploadBtn").style.display = "block";
+          }
+        });
+
+        // Select all checkbox
+        document
+          .getElementById("selectAll")
+          .addEventListener("change", function () {
+            if (this.checked) {
+              selectAll();
             } else {
-              $("#disk-progress")
-                .removeClass("bg-warning bg-danger")
-                .addClass("bg-success");
+              clearSelection();
+            }
+          });
+
+        // Context menu
+        document.addEventListener("click", function () {
+          hideContextMenu();
+        });
+
+        // Escape key to clear selection
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape") {
+            clearSelection();
+            hideContextMenu();
+          }
+        });
+      }
+
+      // Navigation
+      function navigateTo(path) {
+        currentPath = path;
+        clearSelection();
+        loadDirectory(path);
+
+        // Update active sidebar link
+        document.querySelectorAll(".sidebar .nav-link").forEach((link) => {
+          link.classList.remove("active");
+        });
+        event.target.classList.add("active");
+      }
+
+      function loadDirectory(path) {
+        showLoading();
+
+        fetch(
+          `/api/browse?path=${encodeURIComponent(
+            path
+          )}&sort=${currentSort}&order=${currentOrder}`
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.error) {
+              showError(data.error);
+              return;
+            }
+
+            currentPath = data.current_path;
+            updateBreadcrumb(data.breadcrumbs);
+            displayContents(data.contents);
+            hideLoading();
+
+            // Show empty state if no contents
+            if (data.contents.length === 0) {
+              showEmptyState();
             }
           })
-          .fail(function () {
-            $("#storage-info").html(
-              '<div class="text-danger">Failed to load storage information</div>'
-            );
+          .catch((error) => {
+            showError("Failed to load directory: " + error.message);
+            hideLoading();
           });
       }
 
-      function refreshPage() {
-        location.reload();
-      }
+      function updateBreadcrumb(breadcrumbs) {
+        const breadcrumbEl = document.getElementById("breadcrumb");
+        breadcrumbEl.innerHTML = "";
 
-      function showCreateFolderModal() {
-        $("#folder-name").val("");
-        new bootstrap.Modal(
-          document.getElementById("createFolderModal")
-        ).show();
-      }
+        breadcrumbs.forEach((crumb, index) => {
+          const li = document.createElement("li");
+          li.className = "breadcrumb-item";
 
-      function createFolder() {
-        const folderName = $("#folder-name").val().trim();
-        if (!folderName) {
-          alert("Please enter a folder name");
-          return;
-        }
+          if (index === breadcrumbs.length - 1) {
+            li.classList.add("active");
+            li.textContent = crumb.name;
+          } else {
+            const a = document.createElement("a");
+            a.href = "#";
+            a.textContent = crumb.name;
+            a.onclick = () => navigateTo(crumb.path);
+            li.appendChild(a);
+          }
 
-        const currentPath = "{{ current_path }}";
-
-        $.ajax({
-          url: "/create_folder",
-          method: "POST",
-          contentType: "application/json",
-          data: JSON.stringify({
-            current_path: currentPath,
-            folder_name: folderName,
-          }),
-          success: function () {
-            bootstrap.Modal.getInstance(
-              document.getElementById("createFolderModal")
-            ).hide();
-            location.reload();
-          },
-          error: function (xhr) {
-            const error = xhr.responseJSON
-              ? xhr.responseJSON.error
-              : "Unknown error";
-            alert("Error creating folder: " + error);
-          },
+          breadcrumbEl.appendChild(li);
         });
       }
 
-      function deleteItem(path) {
-        if (
-          !confirm(
-            "Are you sure you want to delete this item? This action cannot be undone."
-          )
-        ) {
-          return;
+      // Display functions
+      function displayContents(contents) {
+        if (currentView === "grid") {
+          displayGrid(contents);
+        } else {
+          displayList(contents);
         }
 
-        $.ajax({
-          url: "/delete",
-          method: "POST",
-          contentType: "application/json",
-          data: JSON.stringify({ path: path }),
-          success: function () {
-            location.reload();
-          },
-          error: function (xhr) {
-            const error = xhr.responseJSON
-              ? xhr.responseJSON.error
-              : "Unknown error";
-            alert("Error deleting item: " + error);
-          },
+        hideEmptyState();
+      }
+
+      function displayGrid(contents) {
+        const gridEl = document.getElementById("fileGrid");
+        const listEl = document.getElementById("fileList");
+
+        gridEl.style.display = "grid";
+        listEl.style.display = "none";
+
+        gridEl.innerHTML = "";
+
+        contents.forEach((item) => {
+          const itemEl = createGridItem(item);
+          gridEl.appendChild(itemEl);
         });
       }
 
-      function toggleSelectAll() {
-        const selectAll = $("#select-all-checkbox").is(":checked");
-        $(".item-checkbox").prop("checked", selectAll);
+      function displayList(contents) {
+        const gridEl = document.getElementById("fileGrid");
+        const listEl = document.getElementById("fileList");
+
+        gridEl.style.display = "none";
+        listEl.style.display = "block";
+
+        const contentEl = document.getElementById("fileListContent");
+        contentEl.innerHTML = "";
+
+        contents.forEach((item) => {
+          const itemEl = createListItem(item);
+          contentEl.appendChild(itemEl);
+        });
+      }
+
+      function createGridItem(item) {
+        const div = document.createElement("div");
+        div.className = "file-item";
+        div.dataset.path =
+          item.type === "folder"
+            ? `${currentPath}/${item.name}`
+            : `${currentPath}/${item.name}`;
+        div.dataset.type = item.type;
+        div.dataset.name = item.name;
+
+        const icon = getFileIcon(item);
+        const info =
+          item.type === "folder"
+            ? `${item.file_count} files`
+            : item.size_formatted;
+
+        div.innerHTML = `
+                <i class="${icon} file-icon ${item.category || item.type}"></i>
+                <div class="file-name">${item.name}</div>
+                <div class="file-info">
+                    ${info}<br>
+                    <small>${item.modified}</small>
+                </div>
+            `;
+
+        div.addEventListener("click", function (e) {
+          handleItemClick(this, e);
+        });
+
+        div.addEventListener("dblclick", function () {
+          openItem(this);
+        });
+
+        div.addEventListener("contextmenu", function (e) {
+          showContextMenu(e, this);
+        });
+
+        return div;
+      }
+
+      function createListItem(item) {
+        const div = document.createElement("div");
+        div.className = "file-list-item";
+        div.dataset.path =
+          item.type === "folder"
+            ? `${currentPath}/${item.name}`
+            : `${currentPath}/${item.name}`;
+        div.dataset.type = item.type;
+        div.dataset.name = item.name;
+
+        const icon = getFileIcon(item);
+        const info =
+          item.type === "folder"
+            ? `${item.file_count} files`
+            : item.size_formatted;
+
+        div.innerHTML = `
+                <input type="checkbox" class="item-checkbox">
+                <div class="d-flex align-items-center">
+                    <i class="${icon} me-2 ${item.category || item.type}"></i>
+                    ${item.name}
+                </div>
+                <div class="d-none d-md-block">${info}</div>
+                <div class="d-none d-md-block">${item.modified}</div>
+                <div class="d-none d-md-block">${item.type}</div>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="downloadItem('${
+                          div.dataset.path
+                        }')">Download</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="renameItem('${
+                          div.dataset.path
+                        }')">Rename</a></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="deleteItem('${
+                          div.dataset.path
+                        }')">Delete</a></li>
+                    </ul>
+                </div>
+            `;
+
+        div.addEventListener("click", function (e) {
+          if (
+            !e.target.matches('input[type="checkbox"]') &&
+            !e.target.closest(".dropdown")
+          ) {
+            handleItemClick(this, e);
+          }
+        });
+
+        div.addEventListener("dblclick", function () {
+          openItem(this);
+        });
+
+        const checkbox = div.querySelector(".item-checkbox");
+        checkbox.addEventListener("change", function () {
+          toggleSelection(div);
+        });
+
+        return div;
+      }
+
+      function getFileIcon(item) {
+        if (item.type === "folder") {
+          return "fas fa-folder";
+        }
+
+        const category = item.category || "file";
+        const iconMap = {
+          image: "fas fa-image",
+          video: "fas fa-video",
+          audio: "fas fa-music",
+          text: "fas fa-file-alt",
+          code: "fas fa-code",
+          pdf: "fas fa-file-pdf",
+          archive: "fas fa-file-archive",
+          model: "fas fa-brain",
+          file: "fas fa-file",
+        };
+
+        return iconMap[category] || "fas fa-file";
+      }
+
+      // Selection handling
+      function handleItemClick(element, event) {
+        if (event.ctrlKey || event.metaKey) {
+          toggleSelection(element);
+        } else if (event.shiftKey && selectedItems.size > 0) {
+          // Implement shift selection
+          selectRange(element);
+        } else {
+          clearSelection();
+          selectItem(element);
+        }
+      }
+
+      function selectItem(element) {
+        element.classList.add("selected");
+        selectedItems.add(element.dataset.path);
+        updateSelectionBar();
+
+        const checkbox = element.querySelector(".item-checkbox");
+        if (checkbox) checkbox.checked = true;
+      }
+
+      function deselectItem(element) {
+        element.classList.remove("selected");
+        selectedItems.delete(element.dataset.path);
+        updateSelectionBar();
+
+        const checkbox = element.querySelector(".item-checkbox");
+        if (checkbox) checkbox.checked = false;
+      }
+
+      function toggleSelection(element) {
+        if (selectedItems.has(element.dataset.path)) {
+          deselectItem(element);
+        } else {
+          selectItem(element);
+        }
       }
 
       function selectAll() {
-        $(".item-checkbox").prop("checked", true);
-        $("#select-all-checkbox").prop("checked", true);
+        clearSelection();
+        document
+          .querySelectorAll(".file-item, .file-list-item")
+          .forEach((item) => {
+            selectItem(item);
+          });
+      }
+
+      function clearSelection() {
+        selectedItems.clear();
+        document
+          .querySelectorAll(".file-item.selected, .file-list-item.selected")
+          .forEach((item) => {
+            item.classList.remove("selected");
+            const checkbox = item.querySelector(".item-checkbox");
+            if (checkbox) checkbox.checked = false;
+          });
+        updateSelectionBar();
+        document.getElementById("selectAll").checked = false;
+      }
+
+      function updateSelectionBar() {
+        const bar = document.getElementById("selectionBar");
+        const count = document.getElementById("selectionCount");
+
+        if (selectedItems.size > 0) {
+          bar.style.display = "flex";
+          count.textContent = selectedItems.size;
+        } else {
+          bar.style.display = "none";
+        }
+      }
+
+      // File operations
+      function openItem(element) {
+        const path = element.dataset.path;
+        const type = element.dataset.type;
+
+        if (type === "folder") {
+          navigateTo(path);
+        } else {
+          downloadItem(path);
+        }
+      }
+
+      function downloadItem(path) {
+        window.open(`/api/download?path=${encodeURIComponent(path)}`, "_blank");
+      }
+
+      function downloadSelected() {
+        if (selectedItems.size === 0) return;
+
+        if (selectedItems.size === 1) {
+          const path = Array.from(selectedItems)[0];
+          downloadItem(path);
+        } else {
+          // Download multiple files as zip
+          fetch("/api/download_multiple", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ files: Array.from(selectedItems) }),
+          })
+            .then((response) => response.blob())
+            .then((blob) => {
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "selected_files.zip";
+              a.click();
+              window.URL.revokeObjectURL(url);
+            })
+            .catch((error) => showError("Download failed: " + error.message));
+        }
       }
 
       function deleteSelected() {
-        const selected = $(".item-checkbox:checked")
-          .map(function () {
-            return $(this).val();
-          })
-          .get();
+        if (selectedItems.size === 0) return;
 
-        if (selected.length === 0) {
-          alert("Please select items to delete");
-          return;
-        }
-
-        if (
-          !confirm(
-            `Are you sure you want to delete ${selected.length} selected item(s)? This action cannot be undone.`
-          )
-        ) {
-          return;
-        }
-
-        let completed = 0;
-        let errors = [];
-
-        selected.forEach(function (path) {
-          $.ajax({
-            url: "/delete",
+        if (confirm(`Delete ${selectedItems.size} item(s)?`)) {
+          fetch("/api/delete", {
             method: "POST",
-            contentType: "application/json",
-            data: JSON.stringify({ path: path }),
-            success: function () {
-              completed++;
-              if (completed === selected.length) {
-                if (errors.length > 0) {
-                  alert(
-                    `Deleted ${
-                      completed - errors.length
-                    } items. Errors: ${errors.join(", ")}`
-                  );
-                }
-                location.reload();
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: Array.from(selectedItems) }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                clearSelection();
+                loadDirectory(currentPath);
+                showSuccess("Items deleted successfully");
+              } else {
+                showError("Some items could not be deleted");
               }
-            },
-            error: function (xhr) {
-              completed++;
-              errors.push(path);
-              if (completed === selected.length) {
-                if (errors.length > 0) {
-                  alert(
-                    `Deleted ${
-                      completed - errors.length
-                    } items. Errors: ${errors.join(", ")}`
-                  );
-                }
-                location.reload();
-              }
-            },
+            })
+            .catch((error) => showError("Delete failed: " + error.message));
+        }
+      }
+
+      // View controls
+      function setView(view) {
+        currentView = view;
+
+        document
+          .getElementById("gridView")
+          .classList.toggle("active", view === "grid");
+        document
+          .getElementById("listView")
+          .classList.toggle("active", view === "list");
+
+        // Reload current contents in new view
+        if (
+          document.getElementById("fileGrid").children.length > 0 ||
+          document.getElementById("fileListContent").children.length > 0
+        ) {
+          loadDirectory(currentPath);
+        }
+      }
+
+      function sortBy(field) {
+        if (currentSort === field) {
+          currentOrder = currentOrder === "asc" ? "desc" : "asc";
+        } else {
+          currentSort = field;
+          currentOrder = "asc";
+        }
+
+        // Update sort indicators
+        document.querySelectorAll(".sort-header i").forEach((icon) => {
+          icon.className = "fas fa-sort";
+        });
+
+        const sortIcon = document.getElementById(
+          `sort${field.charAt(0).toUpperCase() + field.slice(1)}`
+        );
+        if (sortIcon) {
+          sortIcon.className = `fas fa-sort-${
+            currentOrder === "asc" ? "up" : "down"
+          }`;
+        }
+
+        loadDirectory(currentPath);
+      }
+
+      // Modals and actions
+      function showCreateFolder() {
+        const modal = new bootstrap.Modal(
+          document.getElementById("createFolderModal")
+        );
+        modal.show();
+
+        // Focus input when modal is shown
+        document
+          .getElementById("createFolderModal")
+          .addEventListener("shown.bs.modal", function () {
+            document.getElementById("folderNameInput").focus();
           });
+      }
+
+      function createFolder() {
+        const name = document.getElementById("folderNameInput").value.trim();
+        if (!name) return;
+
+        fetch("/api/create_folder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            current_path: currentPath,
+            folder_name: name,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              bootstrap.Modal.getInstance(
+                document.getElementById("createFolderModal")
+              ).hide();
+              document.getElementById("folderNameInput").value = "";
+              loadDirectory(currentPath);
+              showSuccess("Folder created successfully");
+            } else {
+              showError(data.error);
+            }
+          })
+          .catch((error) =>
+            showError("Failed to create folder: " + error.message)
+          );
+      }
+
+      function showUpload() {
+        const modal = new bootstrap.Modal(
+          document.getElementById("uploadModal")
+        );
+        modal.show();
+      }
+
+      function uploadFiles() {
+        const files = document.getElementById("fileInput").files;
+        if (files.length === 0) return;
+
+        const formData = new FormData();
+        formData.append("current_path", currentPath);
+
+        for (let file of files) {
+          formData.append("files", file);
+        }
+
+        // Show progress
+        const progressContainer = document.getElementById("uploadProgress");
+        const progressBar = progressContainer.querySelector(".progress-bar");
+        progressContainer.style.display = "block";
+
+        fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            bootstrap.Modal.getInstance(
+              document.getElementById("uploadModal")
+            ).hide();
+            progressContainer.style.display = "none";
+            document.getElementById("fileInput").value = "";
+            document.getElementById("uploadBtn").style.display = "none";
+
+            if (data.success) {
+              loadDirectory(currentPath);
+              showSuccess("Files uploaded successfully");
+            } else {
+              showError("Some files could not be uploaded");
+            }
+          })
+          .catch((error) => {
+            progressContainer.style.display = "none";
+            showError("Upload failed: " + error.message);
+          });
+      }
+
+      // Context menu
+      function showContextMenu(event, element) {
+        event.preventDefault();
+        contextMenuItem = element;
+
+        const menu = document.getElementById("contextMenu");
+        menu.style.display = "block";
+        menu.style.left = event.pageX + "px";
+        menu.style.top = event.pageY + "px";
+      }
+
+      function hideContextMenu() {
+        document.getElementById("contextMenu").style.display = "none";
+        contextMenuItem = null;
+      }
+
+      function downloadFile() {
+        if (contextMenuItem) {
+          downloadItem(contextMenuItem.dataset.path);
+          hideContextMenu();
+        }
+      }
+
+      function renameFile() {
+        if (contextMenuItem) {
+          renameItem(contextMenuItem.dataset.path);
+          hideContextMenu();
+        }
+      }
+
+      function deleteFile() {
+        if (contextMenuItem) {
+          deleteItem(contextMenuItem.dataset.path);
+          hideContextMenu();
+        }
+      }
+
+      function renameItem(path) {
+        const modal = new bootstrap.Modal(
+          document.getElementById("renameModal")
+        );
+        const input = document.getElementById("renameInput");
+        const currentName = path.split("/").pop();
+
+        input.value = currentName;
+        modal.show();
+
+        // Store path for rename operation
+        document.getElementById("renameModal").dataset.path = path;
+
+        // Focus and select text
+        document
+          .getElementById("renameModal")
+          .addEventListener("shown.bs.modal", function () {
+            input.focus();
+            input.select();
+          });
+      }
+
+      function confirmRename() {
+        const modal = document.getElementById("renameModal");
+        const oldPath = modal.dataset.path;
+        const newName = document.getElementById("renameInput").value.trim();
+
+        if (!newName) return;
+
+        fetch("/api/rename", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            old_path: oldPath,
+            new_name: newName,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              bootstrap.Modal.getInstance(modal).hide();
+              loadDirectory(currentPath);
+              showSuccess("Item renamed successfully");
+            } else {
+              showError(data.error);
+            }
+          })
+          .catch((error) => showError("Rename failed: " + error.message));
+      }
+
+      function deleteItem(path) {
+        if (confirm("Delete this item?")) {
+          fetch("/api/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: [path] }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                loadDirectory(currentPath);
+                showSuccess("Item deleted successfully");
+              } else {
+                showError(data.errors[0] || "Delete failed");
+              }
+            })
+            .catch((error) => showError("Delete failed: " + error.message));
+        }
+      }
+
+      // Search
+      function searchFiles(query) {
+        fetch(
+          `/api/search?q=${encodeURIComponent(query)}&path=${encodeURIComponent(
+            currentPath
+          )}`
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.error) {
+              showError(data.error);
+              return;
+            }
+
+            showSearchResults(data.results, query);
+          })
+          .catch((error) => showError("Search failed: " + error.message));
+      }
+
+      function showSearchResults(results, query) {
+        const searchEl = document.getElementById("searchResults");
+        const contentEl = document.getElementById("searchResultsContent");
+
+        // Hide other views
+        document.getElementById("fileGrid").style.display = "none";
+        document.getElementById("fileList").style.display = "none";
+        document.getElementById("emptyState").style.display = "none";
+
+        searchEl.style.display = "block";
+        searchEl.querySelector(
+          "h6"
+        ).textContent = `Search Results for "${query}" (${results.length})`;
+
+        contentEl.innerHTML = "";
+
+        if (results.length === 0) {
+          contentEl.innerHTML =
+            '<p class="text-muted">No files found matching your search.</p>';
+          return;
+        }
+
+        results.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "search-result-item p-3 border-bottom";
+          div.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="${getFileIcon(item)} me-3 text-primary"></i>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">${item.name}</div>
+                            <small class="text-muted">${
+                              item.relative_path
+                            }</small>
+                            ${
+                              item.size_formatted
+                                ? `<small class="text-muted ms-3">${item.size_formatted}</small>`
+                                : ""
+                            }
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="downloadItem('${
+                          item.path
+                        }')">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                `;
+          contentEl.appendChild(div);
         });
       }
 
-      // Handle folder/file row clicks for navigation
-      $(".folder-row").click(function (e) {
-        if (
-          e.target.type !== "checkbox" &&
-          !$(e.target).closest("a, button").length
-        ) {
-          const path = $(this).data("path");
-          window.location.href = "?path=" + encodeURIComponent(path);
-        }
-      });
+      function hideSearchResults() {
+        document.getElementById("searchResults").style.display = "none";
+      }
+
+      // Storage info
+      function updateStorageInfo() {
+        fetch(`/api/storage_info?path=${encodeURIComponent(currentPath)}`)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.error) return;
+
+            const progressBar = document.querySelector(
+              "#storageInfo .progress-bar"
+            );
+            const usedSpace = document.getElementById("usedSpace");
+            const totalSpace = document.getElementById("totalSpace");
+
+            progressBar.style.width = data.disk_usage_percent + "%";
+            progressBar.className = `progress-bar ${
+              data.disk_usage_percent > 90
+                ? "bg-danger"
+                : data.disk_usage_percent > 75
+                ? "bg-warning"
+                : "bg-success"
+            }`;
+
+            usedSpace.textContent = data.disk_used_formatted;
+            totalSpace.textContent = data.disk_total_formatted;
+          })
+          .catch((error) =>
+            console.error("Failed to update storage info:", error)
+          );
+      }
+
+      // Utility functions
+      function showLoading() {
+        document.getElementById("loading").style.display = "block";
+        document.getElementById("fileGrid").style.display = "none";
+        document.getElementById("fileList").style.display = "none";
+        document.getElementById("emptyState").style.display = "none";
+        hideSearchResults();
+      }
+
+      function hideLoading() {
+        document.getElementById("loading").style.display = "none";
+      }
+
+      function showEmptyState() {
+        document.getElementById("emptyState").style.display = "block";
+        document.getElementById("fileGrid").style.display = "none";
+        document.getElementById("fileList").style.display = "none";
+      }
+
+      function hideEmptyState() {
+        document.getElementById("emptyState").style.display = "none";
+      }
+
+      function showSuccess(message) {
+        // Simple toast notification
+        const toast = document.createElement("div");
+        toast.className =
+          "toast align-items-center text-white bg-success border-0 position-fixed";
+        toast.style.cssText = "top: 20px; right: 20px; z-index: 1060;";
+        toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+
+        document.body.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        toast.addEventListener("hidden.bs.toast", function () {
+          toast.remove();
+        });
+      }
+
+      function showError(message) {
+        const toast = document.createElement("div");
+        toast.className =
+          "toast align-items-center text-white bg-danger border-0 position-fixed";
+        toast.style.cssText = "top: 20px; right: 20px; z-index: 1060;";
+        toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+
+        document.body.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        toast.addEventListener("hidden.bs.toast", function () {
+          toast.remove();
+        });
+      }
     </script>
   </body>
 </html>

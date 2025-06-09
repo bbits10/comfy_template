@@ -568,6 +568,11 @@ def video_calculator():
     """Serve the video overlap calculator page."""
     return render_template('video_overlap_calculator.html')
 
+@app.route('/unianimate-interface')
+def unianimate_interface():
+    """Serve the UniAnimate-DiT interface page."""
+    return render_template('unianimate_interface.html')
+
 # Add installation status functions
 def get_installation_status():
     """Get current installation status"""

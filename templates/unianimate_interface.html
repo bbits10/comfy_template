@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UniAnimate-DiT Interface</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: #333;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: 2.5em;
+        font-weight: 300;
+      }
+
+      .header p {
+        margin: 10px 0 0 0;
+        opacity: 0.9;
+        font-size: 1.1em;
+      }
+
+      .nav-bar {
+        background: #2c3e50;
+        padding: 15px 30px;
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+
+      .nav-link {
+        color: #ecf0f1;
+        text-decoration: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+        font-weight: 500;
+      }
+
+      .nav-link:hover {
+        background-color: #34495e;
+      }
+
+      .content {
+        padding: 30px;
+      }
+
+      .section {
+        margin-bottom: 30px;
+        padding: 25px;
+        border-radius: 10px;
+        background: #f8f9fa;
+        border-left: 5px solid #4facfe;
+      }
+
+      .section h2 {
+        margin-top: 0;
+        color: #2c3e50;
+        font-size: 1.5em;
+      }
+
+      .button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        margin: 10px 10px 10px 0;
+      }
+
+      .button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .button:disabled {
+        background: #bdc3c7;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+      }
+
+      .status-success {
+        background-color: #27ae60;
+      }
+      .status-warning {
+        background-color: #f39c12;
+      }
+      .status-error {
+        background-color: #e74c3c;
+      }
+      .status-info {
+        background-color: #3498db;
+      }
+
+      .output-box {
+        background: #2c3e50;
+        color: #ecf0f1;
+        padding: 20px;
+        border-radius: 8px;
+        font-family: "Courier New", monospace;
+        white-space: pre-wrap;
+        max-height: 400px;
+        overflow-y: auto;
+        margin-top: 15px;
+        border: 2px solid #34495e;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e1e8ed;
+      }
+
+      .card h3 {
+        margin-top: 0;
+        color: #2c3e50;
+      }
+
+      .model-info {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+      }
+
+      .model-info h4 {
+        margin-top: 0;
+        color: #856404;
+      }
+
+      .command-box {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        padding: 10px;
+        border-radius: 5px;
+        font-family: monospace;
+        margin: 10px 0;
+        word-break: break-all;
+      }
+
+      .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-left: 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin: 15px 0;
+      }
+
+      .info-item {
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 5px;
+        border-left: 3px solid #4facfe;
+      }
+
+      .info-label {
+        font-weight: bold;
+        color: #2c3e50;
+      }
+
+      .info-value {
+        color: #7f8c8d;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>UniAnimate-DiT Interface</h1>
+        <p>AI-powered video generation with Diffusion Transformers</p>
+      </div>
+
+      <div class="nav-bar">
+        <a href="/" class="nav-link">🏠 Home</a>
+        <a href="/file-manager" class="nav-link">📁 File Manager</a>
+        <a href="/model-downloader" class="nav-link">⬇️ Model Downloader</a>
+        <a href="/video-overlap-calculator" class="nav-link"
+          >🎬 Video Calculator</a
+        >
+        <a href="/installation-status" class="nav-link"
+          >⚙️ Installation Status</a
+        >
+        <a href="http://localhost:8888" class="nav-link" target="_blank"
+          >📓 JupyterLab</a
+        >
+      </div>
+
+      <div class="content">
+        <div class="section">
+          <h2>🚀 Quick Actions</h2>
+          <button class="button" onclick="testInstallation()">
+            Test Installation
+          </button>
+          <button class="button" onclick="getEnvironmentInfo()">
+            Environment Info
+          </button>
+          <button class="button" onclick="activateEnvironment()">
+            Activate Environment
+          </button>
+          <button class="button" onclick="openTerminal()">Open Terminal</button>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <h3>📋 Installation Status</h3>
+            <div id="installation-status">
+              <span class="status-indicator status-info"></span>
+              <span>Checking installation...</span>
+              <span class="loading"></span>
+            </div>
+            <div id="environment-info" class="info-grid" style="display: none">
+              <div class="info-item">
+                <div class="info-label">Python Version</div>
+                <div class="info-value" id="python-version">Loading...</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">PyTorch Version</div>
+                <div class="info-value" id="pytorch-version">Loading...</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">CUDA Available</div>
+                <div class="info-value" id="cuda-status">Loading...</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Conda Environment</div>
+                <div class="info-value" id="conda-env">Loading...</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>📁 Quick Links</h3>
+            <div style="margin-top: 15px">
+              <a
+                href="/workspace/UniAnimate-DiT"
+                class="button"
+                style="text-decoration: none; display: inline-block"
+                >UniAnimate-DiT Folder</a
+              >
+              <a
+                href="/workspace/UniAnimate-DiT/models"
+                class="button"
+                style="text-decoration: none; display: inline-block"
+                >Models Directory</a
+              >
+              <a
+                href="/workspace/UniAnimate-DiT/test_installation.py"
+                class="button"
+                style="text-decoration: none; display: inline-block"
+                >Test Script</a
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>📥 Model Download Information</h2>
+          <div class="model-info">
+            <h4>Required Models</h4>
+            <p>
+              UniAnimate-DiT requires the following models to be downloaded
+              manually:
+            </p>
+
+            <h5>1. Wan2.1-I2V-14B-720P Model</h5>
+            <div class="command-box">
+              huggingface-cli download Ali-Vilab/Wan2.1-I2V-14B-720P --local-dir
+              /workspace/UniAnimate-DiT/models/wan2.1
+            </div>
+
+            <h5>2. UniAnimate-DiT Checkpoints</h5>
+            <div class="command-box">
+              # Download from official repository or HuggingFace # Place in
+              /workspace/UniAnimate-DiT/models/checkpoints/
+            </div>
+
+            <p>
+              <strong>Note:</strong> Use the Model Downloader service for easier
+              model management.
+            </p>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>🖥️ Terminal Commands</h2>
+          <div class="card">
+            <h3>Activate Environment</h3>
+            <div class="command-box">
+              source /workspace/activate_unianimate.sh
+            </div>
+
+            <h3>Test Installation</h3>
+            <div class="command-box">
+              cd /workspace/UniAnimate-DiT && python test_installation.py
+            </div>
+
+            <h3>Run UniAnimate-DiT</h3>
+            <div class="command-box">
+              cd /workspace/UniAnimate-DiT && python your_script.py
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>📊 System Output</h2>
+          <div id="output-container">
+            <div class="output-box" id="output">
+              Welcome to UniAnimate-DiT Interface! Click "Test Installation" to
+              verify your setup.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function testInstallation() {
+        const button = event.target;
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.innerHTML = 'Testing... <span class="loading"></span>';
+
+        try {
+          const response = await fetch("/api/test-installation");
+          const data = await response.json();
+
+          const output = document.getElementById("output");
+          if (data.success) {
+            output.textContent = data.output;
+            updateInstallationStatus("success", "Installation test passed");
+          } else {
+            output.textContent = `Error: ${data.error}\n\nOutput: ${
+              data.output || "No output"
+            }`;
+            updateInstallationStatus("error", "Installation test failed");
+          }
+        } catch (error) {
+          document.getElementById(
+            "output"
+          ).textContent = `Network error: ${error.message}`;
+          updateInstallationStatus("error", "Network error");
+        } finally {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+      }
+
+      async function getEnvironmentInfo() {
+        const button = event.target;
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.innerHTML = 'Loading... <span class="loading"></span>';
+
+        try {
+          const response = await fetch("/api/environment-info");
+          const data = await response.json();
+
+          const output = document.getElementById("output");
+          if (data.error) {
+            output.textContent = `Error: ${data.error}`;
+          } else {
+            output.textContent = `Current Environment: ${data.current_env}\n\nConda Environments:\n${data.conda_envs}`;
+
+            // Update info grid
+            document.getElementById("environment-info").style.display = "grid";
+            document.getElementById("conda-env").textContent = data.current_env;
+          }
+        } catch (error) {
+          document.getElementById(
+            "output"
+          ).textContent = `Network error: ${error.message}`;
+        } finally {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+      }
+
+      function activateEnvironment() {
+        const output = document.getElementById("output");
+        output.textContent = `To activate the UniAnimate-DiT environment, run this command in terminal:
+
+source /workspace/activate_unianimate.sh
+
+Or manually:
+source /workspace/miniconda3/etc/profile.d/conda.sh
+conda activate unianimate
+
+The environment should activate automatically when you open a new terminal.`;
+      }
+
+      function openTerminal() {
+        // This would typically open JupyterLab terminal
+        window.open("/lab/tree", "_blank");
+      }
+
+      function updateInstallationStatus(type, message) {
+        const statusElement = document.getElementById("installation-status");
+        const statusClasses = {
+          success: "status-success",
+          warning: "status-warning",
+          error: "status-error",
+          info: "status-info",
+        };
+
+        statusElement.innerHTML = `
+                <span class="status-indicator ${statusClasses[type]}"></span>
+                <span>${message}</span>
+            `;
+      }
+
+      // Auto-load environment info on page load
+      window.addEventListener("load", function () {
+        setTimeout(getEnvironmentInfo, 1000);
+      });
+    </script>
+  </body>
+</html>

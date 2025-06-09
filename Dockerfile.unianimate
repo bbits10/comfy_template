@@ -1,0 +1,83 @@
+# Use the RunPod CUDA 12.8.1 base image for full CUDA 12.8 compatibility
+FROM runpod/pytorch:2.8.0-py3.11-cuda12.8.1-cudnn-devel-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Force new layer with build timestamp to bypass RunPod caching
+RUN echo "Build timestamp: $(date)" && echo "This forces a new layer and bypasses image caching"
+
+# Install system dependencies including conda prerequisites
+RUN apt-get update && apt-get install -y \
+    wget \
+    git \
+    python3-pip \
+    dos2unix \
+    curl \
+    bzip2 \
+    ca-certificates \
+    libglib2.0-0 \
+    libxext6 \
+    libsm6 \
+    libxrender1 \
+    mercurial \
+    subversion \
+    build-essential \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python packages for web services
+RUN python -m pip install --upgrade pip && \
+    python -m pip install --no-cache-dir flask==2.3.3 requests werkzeug==2.3.7 jupyterlab --ignore-installed
+
+WORKDIR /opt
+
+# Copy local files instead of cloning from GitHub
+COPY . /opt/comfy_template/
+
+# Change to the template directory
+WORKDIR /opt/comfy_template
+
+# Verify we have the files and fix line endings
+RUN ls -la && \
+    dos2unix *.sh && \
+    chmod +x *.sh
+
+# Don't install UniAnimate-DiT during build - do it at runtime instead
+# This keeps the image smaller and more reliable
+
+# Final verification that start_services_unianimate.sh exists and is executable
+RUN ls -la start_services_unianimate.sh && \
+    test -x start_services_unianimate.sh && \
+    echo "start_services_unianimate.sh is executable"
+
+# Expose ports for all services
+EXPOSE 8188 8866 8765 8888 8877
+
+# Create entrypoint that handles RunPod volume mounting and conda setup
+RUN echo "=== Creating UniAnimate-DiT entrypoint ===" && \
+    echo '#!/bin/bash' > /unianimate_entrypoint.sh && \
+    echo 'echo "=== Debug: UniAnimate-DiT Container starting ==="' >> /unianimate_entrypoint.sh && \
+    echo 'echo "Current directory: $(pwd)"' >> /unianimate_entrypoint.sh && \
+    echo 'echo "Listing /workspace:"' >> /unianimate_entrypoint.sh && \
+    echo 'ls -la /workspace/' >> /unianimate_entrypoint.sh && \
+    echo 'echo "Listing /opt/comfy_template:"' >> /unianimate_entrypoint.sh && \
+    echo 'ls -la /opt/comfy_template/' >> /unianimate_entrypoint.sh && \
+    echo 'echo "Copying files from /opt/comfy_template to /workspace/comfy_template..."' >> /unianimate_entrypoint.sh && \
+    echo 'mkdir -p /workspace/comfy_template' >> /unianimate_entrypoint.sh && \
+    echo 'cp -r /opt/comfy_template/* /workspace/comfy_template/' >> /unianimate_entrypoint.sh && \
+    echo 'echo "Files copied. Listing /workspace/comfy_template:"' >> /unianimate_entrypoint.sh && \
+    echo 'ls -la /workspace/comfy_template/' >> /unianimate_entrypoint.sh && \
+    echo 'echo "Making scripts executable..."' >> /unianimate_entrypoint.sh && \
+    echo 'chmod +x /workspace/comfy_template/*.sh' >> /unianimate_entrypoint.sh && \
+    echo 'echo "Setting up conda environment variables..."' >> /unianimate_entrypoint.sh && \
+    echo 'export PATH="/workspace/miniconda3/bin:$PATH"' >> /unianimate_entrypoint.sh && \
+    echo 'echo "=== Executing start_services_unianimate.sh ==="' >> /unianimate_entrypoint.sh && \
+    echo 'cd /workspace/comfy_template' >> /unianimate_entrypoint.sh && \
+    echo 'exec ./start_services_unianimate.sh' >> /unianimate_entrypoint.sh && \
+    chmod +x /unianimate_entrypoint.sh
+
+# Set environment variables for conda
+ENV PATH="/workspace/miniconda3/bin:$PATH"
+ENV CONDA_AUTO_UPDATE_CONDA=false
+
+ENTRYPOINT ["/unianimate_entrypoint.sh"]

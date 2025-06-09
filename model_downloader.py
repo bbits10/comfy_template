@@ -12,77 +12,126 @@ MODELS_BASE_DIR = "/workspace/ComfyUI/models"
 
 # Default model configurations (used only if model_configs.json doesn't exist)
 DEFAULT_MODEL_CONFIGS = {
-    "flux": {
-        "name": "Flux Model Set",
-        "models": {
-            "t5xxl_fp16": {
-                "name": "T5xXL FP16 Text Encoder",
-                "url": "https://huggingface.co/vivi168/text_encoder/resolve/main/t5xxl_fp16.safetensors",
-                "path": "text_encoders/t5xxl_fp16.safetensors",
-                "description": "Large text encoder for Flux models. Required for text-to-image tasks."
-            },
-            "clip_l": {
-                "name": "CLIP L Text Encoder",
-                "url": "https://huggingface.co/vivi168/text_encoder/resolve/main/clip_l.safetensors",
-                "path": "text_encoders/clip_l.safetensors",
-                "description": "CLIP-L text encoder for improved prompt understanding."
-            },
-            "ae_vae": {
-                "name": "Flux VAE",
-                "url": "https://huggingface.co/vivi168/vae/resolve/main/ae.safetensors",
-                "path": "vae/ae.safetensors",
-                "description": "Variational Autoencoder for Flux. Required for decoding images."
-            },
-            "flux1_dev": {
-                "name": "Flux Main Model",
-                "url": "https://huggingface.co/vivi168/model/resolve/main/flux1-dev.safetensors",
-                "path": "diffusion_models/flux1-dev.safetensors",
-                "description": "Main diffusion model weights for Flux."
-            },
-            "t5xxl_fp8_e4m3fn_scaled": {
-                "name": "T5xXL FP8 E4M3FN Scaled Text Encoder",
-                "url": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn_scaled.safetensors",
-                "path": "text_encoders/t5xxl_fp8_e4m3fn_scaled.safetensors",
-                "description": "T5xXL FP8 E4M3FN scaled text encoder for Flux models."
-            },
-            "t5xxl_fp8_e4m3fn": {
-                "name": "T5xXL FP8 E4M3FN Text Encoder",
-                "url": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors",
-                "path": "text_encoders/t5xxl_fp8_e4m3fn.safetensors",
-                "description": "T5xXL FP8 E4M3FN text encoder for Flux models."
-            }
-        }
-    },
-    "Wan2.1 Vace": {
-        "name": "Wan Vace Model Set",
-        "models": {
-            "Wan_Vace_fp16": {
-                "name": "Wan Vace 14B FP16",
-                "url": "https://huggingface.co/QuantStack/Wan2.1-VACE-14B-GGUF/resolve/main/Wan2.1-VACE-14B-F16.gguf",
-                "path": "unet/Wan2.1-VACE-14B-F16.gguf",
-                "description": "Wan2.1 VACE 14B model in GGUF format (FP16). For advanced video tasks."
-            },
-            "wan_2.1_vae": {
-                "name": "Wan 2.1 VAE",
-                "url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors",
-                "path": "vae/wan_2.1_vae.safetensors",
-                "description": "VAE for Wan2.1. Required for decoding outputs."
-            },
-            "umt5_xxl_fp16": {
-                "name": "UMT5 XXL FP16 Text Encoder",
-                "url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp16.safetensors",
-                "path": "text_encoders/umt5_xxl_fp16.safetensors",
-                "description": "UMT5 XXL text encoder for Wan2.1."
-            },
-            "wan21_causvid_14b_t2v_lora_rank32": {
-                "name": "Wan21 CausVid 14B T2V LoRA Rank32",
-                "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
-                "path": "lora/Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
-                "description": "LoRA for Wan2.1 CausVid 14B T2V. For video-to-video tasks."
-            }
-        }
+  "flux": {
+    "name": "Flux Model Set",
+    "models": {
+      "t5xxl_fp16": {
+        "name": "T5xXL FP16 Text Encoder",
+        "url": "https://huggingface.co/vivi168/text_encoder/resolve/main/t5xxl_fp16.safetensors",
+        "path": "text_encoders/t5xxl_fp16.safetensors",
+        "description": "Large text encoder for Flux models. Required for text-to-image tasks."
+      },
+      "clip_l": {
+        "name": "CLIP L Text Encoder",
+        "url": "https://huggingface.co/vivi168/text_encoder/resolve/main/clip_l.safetensors",
+        "path": "text_encoders/clip_l.safetensors",
+        "description": "CLIP-L text encoder for improved prompt understanding."
+      },
+      "ae_vae": {
+        "name": "Flux VAE",
+        "url": "https://huggingface.co/vivi168/vae/resolve/main/ae.safetensors",
+        "path": "vae/ae.safetensors",
+        "description": "Variational Autoencoder for Flux. Required for decoding images."
+      },
+      "flux1_dev": {
+        "name": "Flux Main Model",
+        "url": "https://huggingface.co/vivi168/model/resolve/main/flux1-dev.safetensors",
+        "path": "diffusion_models/flux1-dev.safetensors",
+        "description": "Main diffusion model weights for Flux."
+      },
+      "t5xxl_fp8_e4m3fn_scaled": {
+        "name": "T5xXL FP8 E4M3FN Scaled Text Encoder",
+        "url": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn_scaled.safetensors",
+        "path": "text_encoders/t5xxl_fp8_e4m3fn_scaled.safetensors",
+        "description": "T5xXL FP8 E4M3FN scaled text encoder for Flux models."
+      },
+      "t5xxl_fp8_e4m3fn": {
+        "name": "T5xXL FP8 E4M3FN Text Encoder",
+        "url": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors",
+        "path": "text_encoders/t5xxl_fp8_e4m3fn.safetensors",
+        "description": "T5xXL FP8 E4M3FN text encoder for Flux models."
+      }
     }
+  },
+  "Wan2.1 Vace": {
+    "name": "Wan Vace Model Set",
+    "models": {
+      "Wan_Vace_fp16": {
+        "name": "Wan Vace 14B FP16",
+        "url": "https://huggingface.co/QuantStack/Wan2.1-VACE-14B-GGUF/resolve/main/Wan2.1-VACE-14B-F16.gguf",
+        "path": "unet/Wan2.1-VACE-14B-F16.gguf",
+        "description": "Wan2.1 VACE 14B model in GGUF format (FP16). For advanced video tasks."
+      },
+      "wan_2.1_vae": {
+        "name": "Wan 2.1 VAE",
+        "url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors",
+        "path": "vae/wan_2.1_vae.safetensors",
+        "description": "VAE for Wan2.1. Required for decoding outputs."
+      },
+      "umt5_xxl_fp16": {
+        "name": "UMT5 XXL FP16 Text Encoder",
+        "url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp16.safetensors",
+        "path": "text_encoders/umt5_xxl_fp16.safetensors",
+        "description": "UMT5 XXL text encoder for Wan2.1."
+      },
+      "wan21_causvid_14b_t2v_lora_rank32": {
+        "name": "Wan21 CausVid 14B T2V LoRA Rank32",
+        "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
+        "path": "lora/Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
+        "description": "LoRA for Wan2.1 CausVid 14B T2V. For video-to-video tasks."
+      },
+      "wan21_causvid_14b_t2v_lora_rank32_v2": {
+        "name": "Wan21 CausVid 14B T2V LoRA Rank32 v2",
+        "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors",
+        "path": "lora/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors",
+        "description": "LoRA v2 for Wan2.1 CausVid 14B T2V. For video-to-video tasks."
+      },
+      "Wan2.1-VACE-14B-Q8_0": {
+        "name": "Wan2.1-VACE-14B-Q8_0",
+        "url": "https://huggingface.co/QuantStack/Wan2.1-VACE-14B-GGUF/resolve/main/Wan2.1-VACE-14B-Q8_0.gguf",
+        "path": "unet/Wan2.1-VACE-14B-Q8_0.gguf",
+        "description": "Wan2.1-VACE-14B-Q8_0"
+      },
+      "Wan2_1-VACE_module_14B_bf16": {
+        "name": "Wan2.1-VACE Module 14B BF16",
+        "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1-VACE_module_14B_bf16.safetensors",
+        "path": "unet/Wan2_1-VACE_module_14B_bf16.safetensors",
+        "description": "Wan2.1-VACE module 14B in BF16 format."
+      },
+      "Wan2_1-VACE_module_14B_fp8_e4m3fn": {
+        "name": "Wan2.1-VACE Module 14B FP8 E4M3FN",
+        "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1-VACE_module_14B_fp8_e4m3fn.safetensors",
+        "path": "unet/Wan2_1-VACE_module_14B_fp8_e4m3fn.safetensors",
+        "description": "Wan2.1-VACE module 14B in FP8 E4M3FN format."
+      },
+      "Wan21_AccVid_I2V_480P_14B_lora_rank32_fp16": {
+        "name": "Wan21 AccVid I2V 480P 14B LoRA Rank32 FP16",
+        "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_AccVid_I2V_480P_14B_lora_rank32_fp16.safetensors",
+        "path": "lora/Wan21_AccVid_I2V_480P_14B_lora_rank32_fp16.safetensors",
+        "description": "LoRA for Wan21 AccVid I2V 480P 14B, Rank32, FP16."
+      },
+      "Wan2_1-I2V-ATI-14B_fp16": {
+        "name": "Wan2.1 I2V ATI 14B FP16",
+        "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1-I2V-ATI-14B_fp16.safetensors",
+        "path": "unet/Wan2_1-I2V-ATI-14B_fp16.safetensors",
+        "description": "Wan2.1 I2V ATI 14B model in FP16 format."
+      },
+      "Wan2_1-I2V-ATI-14B_fp8_e4m3fn": {
+        "name": "Wan2.1 I2V ATI 14B FP8 E4M3FN",
+        "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1-I2V-ATI-14B_fp8_e4m3fn.safetensors",
+        "path": "unet/Wan2_1-I2V-ATI-14B_fp8_e4m3fn.safetensors",
+        "description": "Wan2.1 I2V ATI 14B model in FP8 E4M3FN format."
+      },
+      "Wan2_1-I2V-ATI-14B_fp8_e5m2": {
+        "name": "Wan2.1 I2V ATI 14B FP8 E5M2",
+        "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1-I2V-ATI-14B_fp8_e5m2.safetensors",
+        "path": "unet/Wan2_1-I2V-ATI-14B_fp8_e5m2.safetensors",
+        "description": "Wan2.1 I2V ATI 14B model in FP8 E5M2 format."
+      }
+    }
+  }
 }
+
 
 # Store download status
 download_status = {}

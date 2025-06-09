@@ -126,6 +126,8 @@ if [ "$INSTALL_CUSTOM_NODES_DEPENDENCIES" = true ]; then
     "https://github.com/daxcay/ComfyUI-JDCN"
     "https://github.com/city96/ComfyUI-GGUF"
     "https://github.com/calcuis/gguf"
+    "https://github.com/Yuan-ManX/ComfyUI-SkyReels-A2"
+    "https://github.com/kijai/ComfyUI-GIMM-VFI"
     # was-node-suite-comfyui is handled separately below
     # "https://github.com/thu-ml/SageAttention.git" # Note .git suffix - REMOVED
   )
@@ -146,6 +148,7 @@ if [ "$INSTALL_CUSTOM_NODES_DEPENDENCIES" = true ]; then
     "ComfyUI-GGUF"
     "ComfyUI-JDCN"
     "ComfyUI-KJNodes"
+    "ComfyUI-SkyReels-A2"
   )
   for node_name in "${NODES_WITH_REQS[@]}"; do
     if [ -d "$node_name" ] && [ -f "$node_name/requirements.txt" ]; then

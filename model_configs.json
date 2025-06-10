@@ -49,6 +49,12 @@
         "path": "unet/Wan2.1-VACE-14B-F16.gguf",
         "description": "Wan2.1 VACE 14B model in GGUF format (FP16). For advanced video tasks."
       },
+      "Wan2_1-T2V-14B_fp8_e4m3fn": {
+        "name": "Wan2.1 T2V 14B FP8 E4M3FN",
+        "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1-T2V-14B_fp8_e4m3fn.safetensors",
+        "path": "unet/Wan2_1-T2V-14B_fp8_e4m3fn.safetensors",
+        "description": "Wan2.1 T2V 14B model in FP8 E4M3FN format."
+      },
       "wan_2.1_vae": {
         "name": "Wan 2.1 VAE",
         "url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors",

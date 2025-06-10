@@ -70,13 +70,13 @@
       "wan21_causvid_14b_t2v_lora_rank32": {
         "name": "Wan21 CausVid 14B T2V LoRA Rank32",
         "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
-        "path": "lora/Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
+        "path": "loras/Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
         "description": "LoRA for Wan2.1 CausVid 14B T2V. For video-to-video tasks."
       },
       "wan21_causvid_14b_t2v_lora_rank32_v2": {
         "name": "Wan21 CausVid 14B T2V LoRA Rank32 v2",
         "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors",
-        "path": "lora/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors",
+        "path": "loras/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors",
         "description": "LoRA v2 for Wan2.1 CausVid 14B T2V. For video-to-video tasks."
       },
       "Wan2.1-VACE-14B-Q8_0": {

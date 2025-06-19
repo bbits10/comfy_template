@@ -56,11 +56,17 @@ DEFAULT_MODEL_CONFIGS = {
   "Wan2.1 Vace": {
     "name": "Wan Vace Model Set",
     "models": {
-      "Wan_Vace_fp16": {
+      "Wan_Vace_F16": {
         "name": "Wan Vace 14B FP16",
-        "url": "https://huggingface.co/QuantStack/Wan2.1-VACE-14B-GGUF/resolve/main/Wan2.1-VACE-14B-F16.gguf",
+        "url": "https://huggingface.co/QuantStack/Wan2.1_14B_VACE-GGUF/resolve/main/Wan2.1_14B_VACE-F16.gguf",
         "path": "unet/Wan2.1-VACE-14B-F16.gguf",
         "description": "Wan2.1 VACE 14B model in GGUF format (FP16). For advanced video tasks."
+      },
+      "Wan_Vace_BF16": {
+        "name": "Wan Vace 14B BF16",
+        "url": "https://huggingface.co/QuantStack/Wan2.1_14B_VACE-GGUF/resolve/main/Wan2.1_14B_VACE-BF16.gguf",
+        "path": "unet/Wan2.1-VACE-14B-FB16.gguf",
+        "description": "Wan2.1 VACE 14B model in GGUF format (BF16). For advanced video tasks."
       },
       "wan_2.1_vae": {
         "name": "Wan 2.1 VAE",
@@ -88,7 +94,7 @@ DEFAULT_MODEL_CONFIGS = {
       },
       "Wan2.1-VACE-14B-Q8_0": {
         "name": "Wan2.1-VACE-14B-Q8_0",
-        "url": "https://huggingface.co/QuantStack/Wan2.1-VACE-14B-GGUF/resolve/main/Wan2.1-VACE-14B-Q8_0.gguf",
+        "url": "https://huggingface.co/QuantStack/Wan2.1_14B_VACE-GGUF/resolve/main/Wan2.1_14B_VACE-Q8_0.gguf",
         "path": "unet/Wan2.1-VACE-14B-Q8_0.gguf",
         "description": "Wan2.1-VACE-14B-Q8_0"
       },

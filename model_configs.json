@@ -135,5 +135,82 @@
         "description": "Wan2.1 I2V ATI 14B model in FP8 E5M2 format."
       }
     }
+  },
+  "Hi-Dream": {
+    "name": "Hi-Dream Model Set",
+    "models": {
+      "hidream_e1_full_bf16": {
+        "name": "HiDream E1 Full BF16",
+        "url": "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/diffusion_models/hidream_e1_full_bf16.safetensors",
+        "path": "diffusion_models/hidream_e1_full_bf16.safetensors",
+        "description": "HiDream E1 full model in BF16 format (34.2 GB). High-quality image generation."
+      },
+      "hidream_i1_dev_bf16": {
+        "name": "HiDream I1 Dev BF16",
+        "url": "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/diffusion_models/hidream_i1_dev_bf16.safetensors",
+        "path": "diffusion_models/hidream_i1_dev_bf16.safetensors",
+        "description": "HiDream I1 development model in BF16 format (34.2 GB). Balanced quality and performance."
+      },
+      "hidream_i1_dev_fp8": {
+        "name": "HiDream I1 Dev FP8",
+        "url": "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/diffusion_models/hidream_i1_dev_fp8.safetensors",
+        "path": "diffusion_models/hidream_i1_dev_fp8.safetensors",
+        "description": "HiDream I1 development model in FP8 format (17.1 GB). Smaller size with good quality."
+      },
+      "hidream_i1_fast_bf16": {
+        "name": "HiDream I1 Fast BF16",
+        "url": "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/diffusion_models/hidream_i1_fast_bf16.safetensors",
+        "path": "diffusion_models/hidream_i1_fast_bf16.safetensors",
+        "description": "HiDream I1 fast model in BF16 format (34.2 GB). Optimized for faster generation."
+      },
+      "hidream_i1_fast_fp8": {
+        "name": "HiDream I1 Fast FP8",
+        "url": "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/diffusion_models/hidream_i1_fast_fp8.safetensors",
+        "path": "diffusion_models/hidream_i1_fast_fp8.safetensors",
+        "description": "HiDream I1 fast model in FP8 format (17.1 GB). Fastest generation with smaller size."
+      },
+      "hidream_i1_full_fp16": {
+        "name": "HiDream I1 Full FP16",
+        "url": "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/diffusion_models/hidream_i1_full_fp16.safetensors",
+        "path": "diffusion_models/hidream_i1_full_fp16.safetensors",
+        "description": "HiDream I1 full model in FP16 format (34.2 GB). Maximum quality and detail."
+      },
+      "hidream_i1_full_fp8": {
+        "name": "HiDream I1 Full FP8",
+        "url": "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/diffusion_models/hidream_i1_full_fp8.safetensors",
+        "path": "diffusion_models/hidream_i1_full_fp8.safetensors",
+        "description": "HiDream I1 full model in FP8 format (17.1 GB). High quality with reduced file size."
+      },
+      "clip_g_hidream": {
+        "name": "CLIP-G HiDream Text Encoder",
+        "url": "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/text_encoders/clip_g_hidream.safetensors",
+        "path": "text_encoders/clip_g_hidream.safetensors",
+        "description": "CLIP-G text encoder for HiDream models (1.39 GB). Required for text understanding."
+      },
+      "clip_l_hidream": {
+        "name": "CLIP-L HiDream Text Encoder",
+        "url": "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/text_encoders/clip_l_hidream.safetensors",
+        "path": "text_encoders/clip_l_hidream.safetensors",
+        "description": "CLIP-L text encoder for HiDream models (248 MB). Required for text understanding."
+      },
+      "llama_3_1_8b_instruct_fp8_scaled": {
+        "name": "Llama 3.1 8B Instruct FP8 Scaled",
+        "url": "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/text_encoders/llama_3.1_8b_instruct_fp8_scaled.safetensors",
+        "path": "text_encoders/llama_3.1_8b_instruct_fp8_scaled.safetensors",
+        "description": "Llama 3.1 8B Instruct text encoder in FP8 format (9.08 GB). Advanced text understanding."
+      },
+      "t5xxl_fp8_e4m3fn_scaled_hidream": {
+        "name": "T5XXL FP8 E4M3FN Scaled (HiDream)",
+        "url": "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/text_encoders/t5xxl_fp8_e4m3fn_scaled.safetensors",
+        "path": "text_encoders/t5xxl_fp8_e4m3fn_scaled_hidream.safetensors",
+        "description": "T5XXL FP8 E4M3FN scaled text encoder for HiDream (5.16 GB). High-quality text encoding."
+      },
+      "ae_hidream": {
+        "name": "HiDream VAE",
+        "url": "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/vae/ae.safetensors",
+        "path": "vae/ae_hidream.safetensors",
+        "description": "HiDream Variational Autoencoder (335 MB). Required for encoding/decoding images."
+      }
+    }
   }
 }

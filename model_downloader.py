@@ -457,6 +457,34 @@ def delete_model():
     save_model_configs(MODEL_CONFIGS)
     return jsonify({'status': 'deleted'})
 
+@app.route('/reload_config', methods=['POST'])
+def reload_config():
+    """Reload model configurations from file"""
+    global MODEL_CONFIGS
+    try:
+        MODEL_CONFIGS = load_model_configs()
+        return jsonify({'status': 'success', 'message': 'Configuration reloaded successfully'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'Failed to reload config: {str(e)}'}), 500
+
+@app.route('/debug_config')
+def debug_config():
+    """Debug endpoint to show current config state"""
+    return jsonify({
+        'config_file_path': CONFIG_FILE,
+        'config_file_exists': os.path.exists(CONFIG_FILE),
+        'model_sets': list(MODEL_CONFIGS.keys()),
+        'total_models': sum(len(group['models']) for group in MODEL_CONFIGS.values()),
+        'model_sets_detail': {
+            group_name: {
+                'name': group_data['name'],
+                'model_count': len(group_data['models']),
+                'models': list(group_data['models'].keys())
+            }
+            for group_name, group_data in MODEL_CONFIGS.items()
+        }
+    })
+
 def load_model_configs():
     """Load model configurations from JSON file, fallback to defaults if file doesn't exist"""
     if os.path.exists(CONFIG_FILE):

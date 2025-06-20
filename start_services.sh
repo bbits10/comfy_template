@@ -9,6 +9,33 @@ echo "Current directory: $(pwd)"
 echo "Listing /workspace:"
 ls -la /workspace
 
+# Update template repository to get latest configs
+echo "--- Updating template repository for latest configs ---"
+cd /workspace
+TEMPLATE_REPO_URL="https://github.com/bbits10/comfy_template.git"
+
+if [ -d "/workspace/comfy_template/.git" ]; then
+    echo "Template repository exists, pulling latest changes..."
+    cd /workspace/comfy_template
+    git fetch origin
+    git reset --hard origin/main  # Force update to latest main branch
+    echo "✓ Template repository updated to latest version"
+else
+    echo "Template repository not found or not a git repo. Checking if we need to re-clone..."
+    if [ -d "/workspace/comfy_template" ]; then
+        echo "Backing up existing template directory..."
+        mv /workspace/comfy_template /workspace/comfy_template_backup_$(date +%s)
+    fi
+    echo "Cloning latest template repository..."
+    git clone "$TEMPLATE_REPO_URL" /workspace/comfy_template
+    echo "✓ Template repository cloned"
+fi
+
+# Make sure scripts are executable
+chmod +x /workspace/comfy_template/*.sh
+echo "✓ Made scripts executable"
+cd /workspace
+
 # Start JupyterLab from /workspace directory so ComfyUI folder is visible
 echo "Starting JupyterLab from /workspace directory..."
 cd /workspace

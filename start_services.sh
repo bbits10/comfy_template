@@ -9,6 +9,16 @@ echo "Current directory: $(pwd)"
 echo "Listing /workspace:"
 ls -la /workspace
 
+# Check if this is a resume scenario
+RESUMING_POD=false
+if [ -d "/workspace/ComfyUI" ] && [ -f "/workspace/ComfyUI/main.py" ]; then
+    RESUMING_POD=true
+    echo "=== RESUMING EXISTING POD ==="
+    echo "ComfyUI installation detected. This appears to be a pod resume."
+    echo "Will update template and start services without full reinstallation."
+    echo "============================="
+fi
+
 # Update template repository to get latest configs
 echo "--- Updating template repository for latest configs ---"
 cd /workspace
@@ -64,23 +74,40 @@ else
 fi
 
 # Run ComfyUI installation in background
-echo "Running ComfyUI installation in background..."
-# Run ComfyUI installation in background
-echo "Running ComfyUI installation in background..."
-echo "Checking if flux_install.sh exists at /workspace/comfy_template/flux_install.sh"
-if [ ! -f "/workspace/comfy_template/flux_install.sh" ]; then
-    echo "ERROR: /workspace/comfy_template/flux_install.sh not found!"
-    exit 1
+if [ "$RESUMING_POD" = true ]; then
+    echo "Resuming pod - checking for any missing installations..."
+    echo "Checking if flux_install.sh exists at /workspace/comfy_template/flux_install.sh"
+    if [ ! -f "/workspace/comfy_template/flux_install.sh" ]; then
+        echo "ERROR: /workspace/comfy_template/flux_install.sh not found!"
+        exit 1
+    else
+        echo "Making flux_install.sh executable..."
+        chmod +x /workspace/comfy_template/flux_install.sh
+        echo "Running quick installation check in background..."
+        # Set environment variable to install SageAttention in background by default
+        export INSTALL_SAGEATTENTION="background"
+        bash /workspace/comfy_template/flux_install.sh &
+        INSTALL_PID=$!
+        echo "Installation check PID: $INSTALL_PID"
+        echo "Installation check is running in background to verify all components are installed."
+    fi
 else
-    echo "Making flux_install.sh executable..."
-    chmod +x /workspace/comfy_template/flux_install.sh
-    echo "Running flux_install.sh in background..."
-    # Set environment variable to install SageAttention in background by default
-    export INSTALL_SAGEATTENTION="background"
-    bash /workspace/comfy_template/flux_install.sh &
-    INSTALL_PID=$!
-    echo "ComfyUI installation PID: $INSTALL_PID"
-    echo "ComfyUI installation is running in background. Web services are available immediately."
+    echo "Running ComfyUI installation in background..."
+    echo "Checking if flux_install.sh exists at /workspace/comfy_template/flux_install.sh"
+    if [ ! -f "/workspace/comfy_template/flux_install.sh" ]; then
+        echo "ERROR: /workspace/comfy_template/flux_install.sh not found!"
+        exit 1
+    else
+        echo "Making flux_install.sh executable..."
+        chmod +x /workspace/comfy_template/flux_install.sh
+        echo "Running flux_install.sh in background..."
+        # Set environment variable to install SageAttention in background by default
+        export INSTALL_SAGEATTENTION="background"
+        bash /workspace/comfy_template/flux_install.sh &
+        INSTALL_PID=$!
+        echo "ComfyUI installation PID: $INSTALL_PID"
+        echo "ComfyUI installation is running in background. Web services are available immediately."
+    fi
 fi
 
 # Create symbolic link for ComfyUI visibility in template directory
@@ -95,13 +122,20 @@ else
 fi
 
 # Create model directories after ComfyUI installation
-echo "Waiting for ComfyUI installation to complete..."
-wait $INSTALL_PID
-echo "ComfyUI installation completed successfully."
-
-echo "Creating additional model directories..."
-mkdir -p /workspace/ComfyUI/models/{checkpoints,clip,clip_vision,controlnet,diffusers,embeddings,loras,upscale_models,vae,unet,configs}
-echo "Model directories created."
+if [ "$RESUMING_POD" = true ]; then
+    echo "Resuming pod - ensuring model directories exist..."
+    mkdir -p /workspace/ComfyUI/models/{checkpoints,clip,clip_vision,controlnet,diffusers,embeddings,loras,upscale_models,vae,unet,configs}
+    echo "Model directories verified."
+    echo "Skipping installation wait - ComfyUI should already be ready."
+else
+    echo "Waiting for ComfyUI installation to complete..."
+    wait $INSTALL_PID
+    echo "ComfyUI installation completed successfully."
+    
+    echo "Creating additional model directories..."
+    mkdir -p /workspace/ComfyUI/models/{checkpoints,clip,clip_vision,controlnet,diffusers,embeddings,loras,upscale_models,vae,unet,configs}
+    echo "Model directories created."
+fi
 
 # Start the model downloader in the background (if not already started)
 if [ -z "$MODEL_DOWNLOADER_PID" ]; then

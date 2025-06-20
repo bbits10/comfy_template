@@ -4,11 +4,17 @@ import requests
 from pathlib import Path
 import threading
 import json
+import time
+import fcntl
+from datetime import datetime
 
 app = Flask(__name__)
 
 # Base directory for models
 MODELS_BASE_DIR = "/workspace/ComfyUI/models"
+
+# Persistent download status file
+DOWNLOAD_STATUS_FILE = "/workspace/.download_status.json"
 
 # Default model configurations (used only if model_configs.json doesn't exist)
 DEFAULT_MODEL_CONFIGS = {
@@ -294,45 +300,149 @@ DEFAULT_MODEL_CONFIGS = {
 }
 
 
-# Store download status
+# Store download status (in memory and persisted)
 download_status = {}
+download_lock = threading.Lock()
+
+def load_download_status():
+    """Load download status from persistent storage"""
+    global download_status
+    try:
+        if os.path.exists(DOWNLOAD_STATUS_FILE):
+            with open(DOWNLOAD_STATUS_FILE, 'r') as f:
+                loaded_status = json.load(f)
+                # Clean up completed/error downloads older than 24 hours
+                current_time = time.time()
+                for dest, status in list(loaded_status.items()):
+                    if status.get('status') in ['completed', 'error']:
+                        if current_time - status.get('timestamp', 0) > 86400:  # 24 hours
+                            del loaded_status[dest]
+                download_status = loaded_status
+                print(f"Loaded {len(download_status)} download status entries")
+    except Exception as e:
+        print(f"Error loading download status: {e}")
+        download_status = {}
+
+def save_download_status():
+    """Save download status to persistent storage"""
+    try:
+        with open(DOWNLOAD_STATUS_FILE, 'w') as f:
+            json.dump(download_status, f, indent=2)
+    except Exception as e:
+        print(f"Error saving download status: {e}")
+
+def update_download_status(destination, status_update):
+    """Thread-safe update of download status with persistence"""
+    with download_lock:
+        if destination not in download_status:
+            download_status[destination] = {}
+        
+        download_status[destination].update(status_update)
+        download_status[destination]['timestamp'] = time.time()
+        
+        # Save to disk every update
+        save_download_status()
+
+def cleanup_stale_downloads():
+    """Clean up downloads that appear to be stale/orphaned"""
+    with download_lock:
+        current_time = time.time()
+        to_remove = []
+        
+        for dest, status in download_status.items():
+            if status.get('status') == 'downloading':
+                # Check if download has been stale for more than 10 minutes
+                if current_time - status.get('timestamp', 0) > 600:
+                    to_remove.append(dest)
+        
+        for dest in to_remove:
+            download_status[dest]['status'] = 'error'
+            download_status[dest]['error'] = 'Download appears to have stalled'
+            print(f"Marked stale download as error: {dest}")
+        
+        if to_remove:
+            save_download_status()
+
+# Load existing download status on startup
+load_download_status()
+cleanup_stale_downloads()
 
 # Configuration file path
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'model_configs.json')
 
 def download_file(url, destination):
     try:
+        # Initialize download status
+        update_download_status(destination, {
+            'progress': 0,
+            'status': 'starting',
+            'url': url,
+            'start_time': time.time(),
+            'file_size': 0,
+            'downloaded': 0
+        })
+        
         response = requests.get(url, stream=True)
         response.raise_for_status()
         total_size = int(response.headers.get('content-length', 0))
         
+        # Update with file size info
+        update_download_status(destination, {
+            'status': 'downloading',
+            'file_size': total_size
+        })
+        
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(destination), exist_ok=True)
         
-        block_size = 1024  # 1 Kibibyte
+        block_size = 8192  # 8KB blocks for better performance
         downloaded = 0
+        start_time = time.time()
         
         with open(destination, 'wb') as f:
             for data in response.iter_content(block_size):
                 downloaded += len(data)
                 f.write(data)
+                
+                current_time = time.time()
+                elapsed_time = current_time - start_time
+                
                 progress = int((downloaded / total_size) * 100) if total_size > 0 else 0
-                download_status[destination] = {
-                    'progress': progress,
-                    'status': 'downloading'
-                }
+                
+                # Calculate speed and ETA
+                speed = downloaded / elapsed_time if elapsed_time > 0 else 0
+                eta = (total_size - downloaded) / speed if speed > 0 and total_size > 0 else 0
+                
+                # Update status every 1% or every 5 seconds, whichever comes first
+                if progress > download_status.get(destination, {}).get('progress', 0) or \
+                   current_time - download_status.get(destination, {}).get('timestamp', 0) > 5:
+                    
+                    update_download_status(destination, {
+                        'progress': progress,
+                        'status': 'downloading',
+                        'downloaded': downloaded,
+                        'speed': speed,
+                        'eta': eta
+                    })
         
-        download_status[destination] = {
+        # Mark as completed
+        update_download_status(destination, {
             'progress': 100,
-            'status': 'completed'
-        }
+            'status': 'completed',
+            'downloaded': downloaded,
+            'completion_time': time.time()
+        })
+        print(f"Download completed: {destination}")
         return True
+        
     except Exception as e:
-        download_status[destination] = {
+        error_msg = str(e)
+        print(f"Download error for {destination}: {error_msg}")
+        update_download_status(destination, {
             'progress': 0,
             'status': 'error',
-            'error': str(e)
-        }
+            'error': error_msg
+        })
         return False
 
 @app.route('/')
@@ -353,9 +463,23 @@ def start_download():
     
     destination = os.path.join(MODELS_BASE_DIR, model_info['path'])
     
-    if destination in download_status and download_status[destination]['status'] == 'downloading':
+    # Check if file already exists
+    if os.path.exists(destination):
+        file_size = os.path.getsize(destination)
+        update_download_status(destination, {
+            'progress': 100,
+            'status': 'completed',
+            'downloaded': file_size,
+            'file_size': file_size
+        })
+        return jsonify({'status': 'already_exists', 'destination': destination})
+    
+    # Check if download is already in progress
+    current_status = download_status.get(destination, {})
+    if current_status.get('status') == 'downloading':
         return jsonify({'error': 'Download already in progress'}), 409
     
+    # Start new download
     thread = threading.Thread(target=download_file, args=(model_info['url'], destination))
     thread.daemon = True
     thread.start()
@@ -364,7 +488,46 @@ def start_download():
 
 @app.route('/status')
 def get_status():
-    return jsonify(download_status)
+    # Clean up stale downloads before returning status
+    cleanup_stale_downloads()
+    
+    # Return status with formatted data for display
+    formatted_status = {}
+    for dest, status in download_status.items():
+        formatted_status[dest] = status.copy()
+        
+        # Add human-readable file sizes and speeds
+        if 'file_size' in status and status['file_size'] > 0:
+            formatted_status[dest]['file_size_mb'] = round(status['file_size'] / (1024 * 1024), 1)
+        
+        if 'downloaded' in status and status['downloaded'] > 0:
+            formatted_status[dest]['downloaded_mb'] = round(status['downloaded'] / (1024 * 1024), 1)
+        
+        if 'speed' in status and status['speed'] > 0:
+            speed_mb = status['speed'] / (1024 * 1024)
+            formatted_status[dest]['speed_mb'] = round(speed_mb, 1)
+        
+        if 'eta' in status and status['eta'] > 0:
+            eta_minutes = status['eta'] / 60
+            formatted_status[dest]['eta_minutes'] = round(eta_minutes, 1)
+    
+    return jsonify(formatted_status)
+
+@app.route('/clear_completed', methods=['POST'])
+def clear_completed():
+    """Clear completed and error downloads from status"""
+    with download_lock:
+        to_remove = []
+        for dest, status in download_status.items():
+            if status.get('status') in ['completed', 'error']:
+                to_remove.append(dest)
+        
+        for dest in to_remove:
+            del download_status[dest]
+        
+        save_download_status()
+    
+    return jsonify({'status': 'cleared', 'removed_count': len(to_remove)})
 
 @app.route('/get_model_configs')
 def get_model_configs():

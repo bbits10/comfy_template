@@ -4,6 +4,17 @@
 
 This RunPod template provides a complete ComfyUI installation with Flux models, custom nodes, and an integrated model downloader. The template automatically sets up ComfyUI, installs dependencies, and provides a web interface for downloading AI models.
 
+### ⚡ Improved Installation System (NEW!)
+
+This template now features an intelligent installation system that:
+
+- **Detects pod resumes** and skips unnecessary reinstallations
+- **Tracks installation progress** with smart markers
+- **Only installs missing components** when restarting a stopped pod
+- **Provides clear status** about what's installed and what's running
+
+For detailed information, see: [Installation System Documentation](INSTALLATION_SYSTEM_README.md)
+
 ## Quick Start
 
 ### 1. Deploy the Template on RunPod
@@ -362,11 +373,35 @@ For enhanced attention mechanisms:
 
 ## Troubleshooting
 
+### Pod Resume Issues (NEW!)
+
+If your pod seems to be re-installing everything after a restart:
+
+1. **Check installation status:**
+
+   ```bash
+   bash /workspace/comfy_template/check_install_status.sh
+   ```
+
+2. **If components are missing:**
+   The system should auto-detect and install missing parts, but you can manually trigger:
+
+   ```bash
+   bash /workspace/comfy_template/flux_install.sh
+   ```
+
+3. **For complete reinstall (if needed):**
+   ```bash
+   bash /workspace/comfy_template/reset_install_markers.sh
+   bash /workspace/comfy_template/start_services.sh
+   ```
+
 ### ComfyUI Won't Start
 
-1. Check JupyterLab terminal for error messages
-2. Ensure all models are properly downloaded
-3. Restart the pod if necessary
+1. Check installation status first (see above)
+2. Check JupyterLab terminal for error messages
+3. Ensure all models are properly downloaded
+4. Restart the pod if necessary
 
 ### Models Not Appearing
 
@@ -383,7 +418,7 @@ For enhanced attention mechanisms:
 
 ### Connection Issues
 
-1. Verify pod is running
+1. Verify pod is running and installation is complete
 2. Check port mappings (8188, 8866, 8765, 8888)
 3. Clear browser cache
 4. Try incognito/private browsing mode

@@ -49,6 +49,30 @@
     <div class="container mt-4">
       <h1 class="mb-4">ComfyUI Model Downloader</h1>
 
+      <!-- Active Downloads Section -->
+      <div
+        id="active-downloads-section"
+        class="card mb-4"
+        style="display: none"
+      >
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-download me-2"></i>Active Downloads
+            <button
+              class="btn btn-sm btn-outline-danger float-end"
+              id="clear-completed-downloads"
+            >
+              Clear Completed
+            </button>
+          </h5>
+        </div>
+        <div class="card-body">
+          <div id="active-downloads-list">
+            <!-- Active downloads will be populated here -->
+          </div>
+        </div>
+      </div>
+
       <!-- Add Model Form -->
       <div class="card mb-4">
         <div class="card-header">
@@ -134,7 +158,10 @@
           <div class="row">
             {% for model_id, model in model_set.models.items() %}
             <div class="col-md-6">
-              <div class="card model-card">
+              <div
+                class="card model-card model-item"
+                data-destination="/workspace/ComfyUI/models/{{ model.path }}"
+              >
                 <div class="card-body">
                   <h5 class="card-title">{{ model.name }}</h5>
                   <p class="card-text">Path: {{ model.path }}</p>
@@ -147,6 +174,7 @@
                     class="btn btn-primary download-btn"
                     data-model-id="{{ model_id }}"
                     data-model-set="{{ model_set_id }}"
+                    data-destination="/workspace/ComfyUI/models/{{ model.path }}"
                   >
                     Download
                   </button>
@@ -266,11 +294,54 @@
         </div>
       </div>
     </div>
-
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
       $(document).ready(function () {
+        // Track active downloads for persistent monitoring
+        let activeDownloads = new Set();
+
+        // Check for existing downloads on page load
+        checkAllActiveDownloads();
+
+        function checkAllActiveDownloads() {
+          $.get("/status")
+            .done(function (status) {
+              for (const [destination, download] of Object.entries(status)) {
+                if (
+                  download.status === "downloading" ||
+                  download.status === "starting"
+                ) {
+                  // Find the corresponding UI elements
+                  const modelPath = destination.replace(
+                    "/workspace/ComfyUI/models/",
+                    ""
+                  );
+                  const modelElement = $(
+                    `[data-destination="${destination}"]`
+                  ).closest(".model-item");
+
+                  if (modelElement.length > 0) {
+                    const btn = modelElement.find(".download-btn");
+                    const progressBar = modelElement.find(".progress");
+                    const statusText = modelElement.find(".status-text");
+
+                    // Restore UI state
+                    progressBar.removeClass("d-none");
+                    btn.prop("disabled", true);
+
+                    // Start monitoring this download
+                    activeDownloads.add(destination);
+                    checkStatus(destination, progressBar, statusText, btn);
+                  }
+                }
+              }
+            })
+            .fail(function () {
+              console.log("Could not load existing download status");
+            });
+        }
+
         $(".download-btn").click(function () {
           const btn = $(this);
           const modelId = btn.data("model-id");
@@ -280,6 +351,7 @@
 
           progressBar.removeClass("d-none");
           btn.prop("disabled", true);
+          statusText.text("Starting download...");
 
           // Start download
           $.post("/download", {
@@ -287,43 +359,193 @@
             model_set: modelSet,
           })
             .done(function (response) {
-              checkStatus(response.destination, progressBar, statusText, btn);
+              if (response.status === "already_exists") {
+                statusText.text("File already exists!");
+                progressBar
+                  .find(".progress-bar")
+                  .css("width", "100%")
+                  .text("100%");
+                btn.prop("disabled", false);
+              } else {
+                activeDownloads.add(response.destination);
+                checkStatus(response.destination, progressBar, statusText, btn);
+              }
             })
             .fail(function (xhr) {
-              statusText.text("Error: " + xhr.responseJSON.error);
+              const error = xhr.responseJSON
+                ? xhr.responseJSON.error
+                : "Unknown error";
+              statusText.text("Error: " + error);
               btn.prop("disabled", false);
+              progressBar.addClass("d-none");
             });
         });
 
+        function formatFileSize(bytes) {
+          if (bytes === 0) return "0 B";
+          const k = 1024;
+          const sizes = ["B", "KB", "MB", "GB"];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return (
+            parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i]
+          );
+        }
+
+        function formatTime(seconds) {
+          if (seconds < 60) return Math.round(seconds) + "s";
+          if (seconds < 3600) return Math.round(seconds / 60) + "m";
+          return Math.round(seconds / 3600) + "h";
+        }
+
         function checkStatus(destination, progressBar, statusText, btn) {
-          $.get("/status").done(function (status) {
-            if (destination in status) {
-              const download = status[destination];
-              const progressBarInner = progressBar.find(".progress-bar");
+          $.get("/status")
+            .done(function (status) {
+              if (destination in status) {
+                const download = status[destination];
+                const progressBarInner = progressBar.find(".progress-bar");
 
-              progressBarInner.css("width", download.progress + "%");
-              progressBarInner.text(download.progress + "%");
+                progressBarInner.css("width", download.progress + "%");
+                progressBarInner.text(download.progress + "%");
 
-              if (download.status === "completed") {
-                statusText.text("Download completed!");
-                btn.prop("disabled", false);
-              } else if (download.status === "error") {
-                statusText.text("Error: " + download.error);
-                btn.prop("disabled", false);
+                let statusMsg = "";
+
+                if (download.status === "starting") {
+                  statusMsg = "Starting download...";
+                } else if (download.status === "downloading") {
+                  statusMsg = `${download.progress}%`;
+
+                  if (download.downloaded_mb && download.file_size_mb) {
+                    statusMsg += ` (${download.downloaded_mb}/${download.file_size_mb} MB)`;
+                  }
+
+                  if (download.speed_mb && download.speed_mb > 0) {
+                    statusMsg += ` - ${download.speed_mb} MB/s`;
+                  }
+
+                  if (download.eta_minutes && download.eta_minutes > 0) {
+                    statusMsg += ` - ETA: ${formatTime(
+                      download.eta_minutes * 60
+                    )}`;
+                  }
+                } else if (download.status === "completed") {
+                  statusMsg = "Download completed!";
+                  if (download.file_size_mb) {
+                    statusMsg += ` (${download.file_size_mb} MB)`;
+                  }
+                  activeDownloads.delete(destination);
+                  btn.prop("disabled", false);
+                } else if (download.status === "error") {
+                  statusMsg = "Error: " + (download.error || "Unknown error");
+                  activeDownloads.delete(destination);
+                  btn.prop("disabled", false);
+                  progressBar.addClass("d-none");
+                }
+
+                statusText.text(statusMsg);
+
+                if (
+                  download.status === "downloading" ||
+                  download.status === "starting"
+                ) {
+                  setTimeout(
+                    () =>
+                      checkStatus(destination, progressBar, statusText, btn),
+                    2000 // Check every 2 seconds for active downloads
+                  );
+                }
               } else {
+                // Download not found in status, might be completed or error
+                activeDownloads.delete(destination);
                 setTimeout(
                   () => checkStatus(destination, progressBar, statusText, btn),
-                  1000
+                  2000
                 );
               }
-            } else {
+            })
+            .fail(function () {
+              // Server error, retry after longer delay
               setTimeout(
                 () => checkStatus(destination, progressBar, statusText, btn),
-                1000
+                5000
               );
+            });
+        } // Add a clear completed downloads button (if needed)
+        $("#clear-completed-downloads").click(function () {
+          $.post("/clear_completed").done(function () {
+            updateActiveDownloadsSection();
+          });
+        });
+
+        // Update active downloads section
+        function updateActiveDownloadsSection() {
+          $.get("/status").done(function (status) {
+            const activeDownloadsList = $("#active-downloads-list");
+            const activeDownloadsSection = $("#active-downloads-section");
+            activeDownloadsList.empty();
+
+            let hasActiveDownloads = false;
+
+            for (const [destination, download] of Object.entries(status)) {
+              if (
+                download.status === "downloading" ||
+                download.status === "starting" ||
+                download.status === "completed" ||
+                download.status === "error"
+              ) {
+                hasActiveDownloads = true;
+
+                const fileName = destination.split("/").pop();
+                const statusClass =
+                  download.status === "completed"
+                    ? "success"
+                    : download.status === "error"
+                    ? "danger"
+                    : "primary";
+
+                let statusText = download.status;
+                if (download.status === "downloading") {
+                  statusText = `${download.progress}%`;
+                  if (download.speed_mb)
+                    statusText += ` - ${download.speed_mb} MB/s`;
+                  if (download.eta_minutes)
+                    statusText += ` - ETA: ${formatTime(
+                      download.eta_minutes * 60
+                    )}`;
+                }
+
+                const downloadItem = $(`
+                  <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                    <div>
+                      <strong>${fileName}</strong><br>
+                      <small class="text-muted">${destination.replace(
+                        "/workspace/ComfyUI/models/",
+                        ""
+                      )}</small>
+                    </div>
+                    <div class="text-end">
+                      <span class="badge bg-${statusClass}">${statusText}</span>
+                      ${
+                        download.file_size_mb
+                          ? `<br><small>${download.downloaded_mb || 0}/${
+                              download.file_size_mb
+                            } MB</small>`
+                          : ""
+                      }
+                    </div>
+                  </div>
+                `);
+
+                activeDownloadsList.append(downloadItem);
+              }
             }
+
+            activeDownloadsSection.toggle(hasActiveDownloads);
           });
         }
+
+        // Update active downloads section periodically
+        setInterval(updateActiveDownloadsSection, 3000);
+        updateActiveDownloadsSection(); // Initial load
 
         // Show/hide new group name input
         $("#add-model-set").change(function () {

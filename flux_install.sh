@@ -116,9 +116,13 @@ if ! is_installed "dependencies_additional"; then
   pip install torchsde
   pip install kornia>=0.7.1 spandrel soundfile sentencepiece
   pip install imageio-ffmpeg  # For VHS_VideoCombine node
+  # Additional packages for ComfyUI and web services
+  pip install flask requests threading-utils
   mark_installed "dependencies_additional"
 else
   echo_section "Additional core dependencies already installed, skipping"
+  # Force reinstall critical missing packages
+  pip install --upgrade safetensors aiohttp flask requests psutil pyyaml pillow
 fi
 update_status "dependencies_additional" "completed"
 
@@ -183,9 +187,10 @@ if [ "$INSTALL_CUSTOM_NODES_DEPENDENCIES" = true ]; then
       "https://github.com/pollockjj/ComfyUI-MultiGPU"
       "https://github.com/daxcay/ComfyUI-JDCN"
       "https://github.com/city96/ComfyUI-GGUF"
-      "https://github.com/calcuis/gguf"
-     
+      # "https://github.com/calcuis/gguf"
       "https://github.com/kijai/ComfyUI-GIMM-VFI"
+      "https://github.com/aria1th/ComfyUI-LogicUtils"
+      "https://github.com/scraed/LanPaint"
       # was-node-suite-comfyui is handled separately below
       # "https://github.com/thu-ml/SageAttention.git" # Note .git suffix - REMOVED
     )
@@ -206,7 +211,6 @@ if [ "$INSTALL_CUSTOM_NODES_DEPENDENCIES" = true ]; then
       "ComfyUI-GGUF"
       "ComfyUI-JDCN"
       "ComfyUI-KJNodes"
-      
     )
     for node_name in "${NODES_WITH_REQS[@]}"; do
       if [ -d "$node_name" ] && [ -f "$node_name/requirements.txt" ]; then
@@ -236,32 +240,6 @@ if [ "$INSTALL_CUSTOM_NODES_DEPENDENCIES" = true ]; then
     echo_section "Custom nodes already installed, skipping"
   fi
 fi
-    
-  )
-  for node_name in "${NODES_WITH_REQS[@]}"; do
-    if [ -d "$node_name" ] && [ -f "$node_name/requirements.txt" ]; then
-      echo "Installing dependencies for $node_name..."
-      pip install -r "$node_name/requirements.txt"
-    fi
-  done
-
-  # Special handling for was-node-suite-comfyui (cloned to specific name if desired, original didn't)
-  WAS_NODE_DIR_NAME="was-node-suite-comfyui" # Directory name it will be cloned into
-  WAS_NODE_REPO="https://github.com/WASasquatch/was-node-suite-comfyui.git"
-  if [ ! -d "$WAS_NODE_DIR_NAME" ]; then
-    echo "Cloning $WAS_NODE_DIR_NAME..."
-    git clone "$WAS_NODE_REPO" "$WAS_NODE_DIR_NAME"
-  else
-    echo "Updating $WAS_NODE_DIR_NAME..."
-    (cd "$WAS_NODE_DIR_NAME" && git pull)
-  fi
-  if [ -f "$WAS_NODE_DIR_NAME/requirements.txt" ]; then
-    echo "Installing dependencies for $WAS_NODE_DIR_NAME..."
-    pip install -r "$WAS_NODE_DIR_NAME/requirements.txt"
-  fi
-
-  cd "$COMFYUI_DIR" # Return to the main ComfyUI directory
-fi
 
 # 8. Clone FFmpeg source
 if ! is_installed "ffmpeg_source"; then
@@ -279,13 +257,13 @@ else
 fi
 
 # 9. Install gguf-node after ComfyUI setup is complete
-if ! is_installed "gguf_node"; then
-  echo_section "Installing gguf-node"
-  pip install gguf-node
-  mark_installed "gguf_node"
-else
-  echo_section "gguf-node already installed, skipping"
-fi
+# if ! is_installed "gguf_node"; then
+#   echo_section "Installing gguf-node"
+#   pip install gguf-node
+#   mark_installed "gguf_node"
+# else
+#   echo_section "gguf-node already installed, skipping"
+# fi
 
 # 10. Install SageAttention (Configurable)
 if [ "$INSTALL_SAGEATTENTION" != "false" ]; then

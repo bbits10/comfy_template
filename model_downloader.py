@@ -64,7 +64,7 @@ DEFAULT_MODEL_CONFIGS = {
     "models": {
       "Wan_Vace_F16": {
         "name": "Wan Vace 14B FP16",
-        "url": "https://huggingface.co/vivi168/model/resolve/main/Wan2.1_14B_VACE-BF16.gguf",
+        "url": "https://huggingface.co/QuantStack/Wan2.1_14B_VACE-GGUF/resolve/main/Wan2.1_14B_VACE-F16.gguf",
         "path": "unet/Wan2.1-VACE-14B-F16.gguf",
         "description": "Wan2.1 VACE 14B model in GGUF format (FP16). For advanced video tasks."
       },
@@ -89,13 +89,13 @@ DEFAULT_MODEL_CONFIGS = {
       "wan21_causvid_14b_t2v_lora_rank32": {
         "name": "Wan21 CausVid 14B T2V LoRA Rank32",
         "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
-        "path": "loras/Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
+        "path": "lora/Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
         "description": "LoRA for Wan2.1 CausVid 14B T2V. For video-to-video tasks."
       },
       "wan21_causvid_14b_t2v_lora_rank32_v2": {
         "name": "Wan21 CausVid 14B T2V LoRA Rank32 v2",
         "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors",
-        "path": "loras/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors",
+        "path": "lora/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors",
         "description": "LoRA v2 for Wan2.1 CausVid 14B T2V. For video-to-video tasks."
       },
       "Wan2.1-VACE-14B-Q8_0": {

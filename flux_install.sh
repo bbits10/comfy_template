@@ -127,14 +127,17 @@ fi
 update_status "dependencies_additional" "completed"
 
 # 5. Install prerequisites for ComfyUI-Manager CLI and other tools
-echo_section "Installing GitPython and Typer (for ComfyUI-Manager CLI)"
-pip install GitPython typer
-mark_installed "manager_prerequisites"
+if ! is_installed "manager_prerequisites"; then
+  echo_section "Installing GitPython and Typer (for ComfyUI-Manager CLI)"
+  pip install GitPython typer
+  mark_installed "manager_prerequisites"
+else
+  echo_section "Manager prerequisites already installed, skipping"
+fi
 
 # 6. Setup ComfyUI-Manager
 if [ "$USE_COMFYUI_MANAGER" = true ]; then
   echo_section "Setting up ComfyUI-Manager"
-  cd "$COMFYUI_DIR"  # Ensure we're in the right directory
   MANAGER_DIR="$COMFYUI_DIR/custom_nodes/ComfyUI-Manager"
   mkdir -p "$COMFYUI_DIR/custom_nodes"
   
@@ -158,7 +161,6 @@ if [ "$USE_COMFYUI_MANAGER" = true ]; then
   python "$MANAGER_DIR/cm-cli.py" restore-dependencies || true # Don't fail if this doesn't work
   
   mark_installed "comfyui_manager"
-  echo "✓ ComfyUI-Manager setup completed"
 fi
 
 # 7. Install Custom Nodes and Their Dependencies

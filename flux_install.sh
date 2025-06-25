@@ -137,108 +137,114 @@ fi
 
 # 6. Setup ComfyUI-Manager
 if [ "$USE_COMFYUI_MANAGER" = true ]; then
-  if ! is_installed "comfyui_manager"; then
-    echo_section "Setting up ComfyUI-Manager"
-    MANAGER_DIR="$COMFYUI_DIR/custom_nodes/ComfyUI-Manager"
-    if [ ! -d "$MANAGER_DIR" ]; then
-      echo "Cloning ComfyUI-Manager..."
-      git clone https://github.com/ltdrdata/ComfyUI-Manager.git "$MANAGER_DIR"
-    else
-      echo "Updating ComfyUI-Manager..."
-      (cd "$MANAGER_DIR" && git pull) # Use subshell to avoid cd issues
-    fi
-    
-    # Install requirements for ComfyUI-Manager, if any are specified in its own requirements.txt
-    if [ -f "$MANAGER_DIR/requirements.txt" ]; then
-      echo "Installing ComfyUI-Manager's own requirements..."
-      pip install -r "$MANAGER_DIR/requirements.txt"
-    fi
-
-    echo "Attempting to restore dependencies via ComfyUI-Manager CLI..."
-    # This command's behavior depends on ComfyUI-Manager's state/config.
-    # It might restore a snapshot or install manager-specific dependencies.
-    python "$MANAGER_DIR/cm-cli.py" restore-dependencies || true # Don't fail if this doesn't work
-    
-    mark_installed "comfyui_manager"
+  echo_section "Setting up ComfyUI-Manager"
+  MANAGER_DIR="$COMFYUI_DIR/custom_nodes/ComfyUI-Manager"
+  mkdir -p "$COMFYUI_DIR/custom_nodes"
+  
+  if [ ! -d "$MANAGER_DIR" ]; then
+    echo "Cloning ComfyUI-Manager..."
+    git clone https://github.com/ltdrdata/ComfyUI-Manager.git "$MANAGER_DIR"
   else
-    echo_section "ComfyUI-Manager already installed, skipping"
+    echo "Updating ComfyUI-Manager..."
+    (cd "$MANAGER_DIR" && git pull) # Use subshell to avoid cd issues
   fi
+  
+  # Install requirements for ComfyUI-Manager, if any are specified in its own requirements.txt
+  if [ -f "$MANAGER_DIR/requirements.txt" ]; then
+    echo "Installing ComfyUI-Manager's own requirements..."
+    pip install -r "$MANAGER_DIR/requirements.txt"
+  fi
+
+  echo "Attempting to restore dependencies via ComfyUI-Manager CLI..."
+  # This command's behavior depends on ComfyUI-Manager's state/config.
+  # It might restore a snapshot or install manager-specific dependencies.
+  python "$MANAGER_DIR/cm-cli.py" restore-dependencies || true # Don't fail if this doesn't work
+  
+  mark_installed "comfyui_manager"
 fi
 
 # 7. Install Custom Nodes and Their Dependencies
 if [ "$INSTALL_CUSTOM_NODES_DEPENDENCIES" = true ]; then
-  if ! is_installed "custom_nodes"; then
-    echo_section "Installing Custom Nodes & Their Dependencies"
-    CUSTOM_NODES_DIR="$COMFYUI_DIR/custom_nodes"
-    mkdir -p "$CUSTOM_NODES_DIR"
-    cd "$CUSTOM_NODES_DIR"
+  echo_section "Installing Custom Nodes & Their Dependencies"
+  CUSTOM_NODES_DIR="$COMFYUI_DIR/custom_nodes"
+  mkdir -p "$CUSTOM_NODES_DIR"
+  cd "$CUSTOM_NODES_DIR"
 
-    # Repositories to clone
-    CUSTOM_NODES_REPOS=(
-      "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite"
-      "https://github.com/civitai/civitai_comfy_nodes"
-      "https://github.com/kijai/ComfyUI-KJNodes"
-      "https://github.com/cubiq/ComfyUI_essentials"
-      "https://github.com/sipherxyz/comfyui-art-venture"
-      "https://github.com/twri/sdxl_prompt_styler"
-      "https://github.com/Nourepide/ComfyUI-Allor"
-      "https://github.com/Extraltodeus/sigmas_tools_and_the_golden_scheduler"
-      "https://github.com/rgthree/rgthree-comfy"
-      "https://github.com/pollockjj/ComfyUI-MultiGPU"
-      "https://github.com/daxcay/ComfyUI-JDCN"
-      "https://github.com/city96/ComfyUI-GGUF"
-      # "https://github.com/calcuis/gguf"
-      "https://github.com/kijai/ComfyUI-GIMM-VFI"
-      "https://github.com/aria1th/ComfyUI-LogicUtils"
-      "https://github.com/scraed/LanPaint"
-      # was-node-suite-comfyui is handled separately below
-      # "https://github.com/thu-ml/SageAttention.git" # Note .git suffix - REMOVED
-    )
+  # Repositories to clone
+  CUSTOM_NODES_REPOS=(
+    "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite"
+    "https://github.com/civitai/civitai_comfy_nodes"
+    "https://github.com/kijai/ComfyUI-KJNodes"
+    "https://github.com/cubiq/ComfyUI_essentials"
+    "https://github.com/sipherxyz/comfyui-art-venture"
+    "https://github.com/twri/sdxl_prompt_styler"
+    "https://github.com/Nourepide/ComfyUI-Allor"
+    "https://github.com/Extraltodeus/sigmas_tools_and_the_golden_scheduler"
+    "https://github.com/rgthree/rgthree-comfy"
+    "https://github.com/pollockjj/ComfyUI-MultiGPU"
+    "https://github.com/daxcay/ComfyUI-JDCN"
+    "https://github.com/city96/ComfyUI-GGUF"
+    "https://github.com/kijai/ComfyUI-GIMM-VFI"
+    "https://github.com/aria1th/ComfyUI-LogicUtils"
+    "https://github.com/scraed/LanPaint"
+    "https://github.com/BlenderNeko/ComfyUI_Noise"
+    "https://github.com/pythongosssss/ComfyUI-Custom-Scripts"
+    "https://github.com/ltdrdata/ComfyUI-Impact-Pack"
+    "https://github.com/Fannovel16/comfyui_controlnet_aux"
+    "https://github.com/melMass/comfy_mtb"
+    "https://github.com/ssitu/ComfyUI_UltimateSDUpscale"
+    # was-node-suite-comfyui is handled separately below
+    # SageAttention is handled separately in section 10
+  )
 
-    for repo_url in "${CUSTOM_NODES_REPOS[@]}"; do
-      repo_name=$(basename "$repo_url" .git)
-      if [ ! -d "$repo_name" ]; then
-        echo "Cloning $repo_name..."
-        git clone "$repo_url" "$repo_name" # Explicitly provide target directory name
-      else
-        echo "Updating $repo_name..."
-        (cd "$repo_name" && git pull)
-      fi
-    done
-
-    # Install requirements for specific nodes that bundle them
-    NODES_WITH_REQS=(
-      "ComfyUI-GGUF"
-      "ComfyUI-JDCN"
-      "ComfyUI-KJNodes"
-    )
-    for node_name in "${NODES_WITH_REQS[@]}"; do
-      if [ -d "$node_name" ] && [ -f "$node_name/requirements.txt" ]; then
-        echo "Installing dependencies for $node_name..."
-        pip install -r "$node_name/requirements.txt"
-      fi
-    done
-
-    # Special handling for was-node-suite-comfyui (cloned to specific name if desired, original didn't)
-    WAS_NODE_DIR_NAME="was-node-suite-comfyui" # Directory name it will be cloned into
-    WAS_NODE_REPO="https://github.com/WASasquatch/was-node-suite-comfyui.git"
-    if [ ! -d "$WAS_NODE_DIR_NAME" ]; then
-      echo "Cloning $WAS_NODE_DIR_NAME..."
-      git clone "$WAS_NODE_REPO" "$WAS_NODE_DIR_NAME"
+  for repo_url in "${CUSTOM_NODES_REPOS[@]}"; do
+    repo_name=$(basename "$repo_url" .git)
+    if [ ! -d "$repo_name" ]; then
+      echo "Cloning $repo_name..."
+      git clone "$repo_url" "$repo_name" # Explicitly provide target directory name
     else
-      echo "Updating $WAS_NODE_DIR_NAME..."
-      (cd "$WAS_NODE_DIR_NAME" && git pull)
+      echo "Updating $repo_name..."
+      (cd "$repo_name" && git pull)
     fi
-    if [ -f "$WAS_NODE_DIR_NAME/requirements.txt" ]; then
-      echo "Installing dependencies for $WAS_NODE_DIR_NAME..."
-      pip install -r "$WAS_NODE_DIR_NAME/requirements.txt"
-    fi
+  done
 
-    cd "$COMFYUI_DIR" # Return to the main ComfyUI directory
-    mark_installed "custom_nodes"
+  # Install requirements for specific nodes that bundle them
+  NODES_WITH_REQS=(
+    "ComfyUI-GGUF"
+    "ComfyUI-JDCN"
+    "ComfyUI-KJNodes"
+    "ComfyUI-VideoHelperSuite"
+    "comfyui-art-venture"
+    "ComfyUI_essentials"
+    "ComfyUI-Impact-Pack"
+    "comfyui_controlnet_aux"
+    "comfy_mtb"
+    "ComfyUI_UltimateSDUpscale"
+  )
+  for node_name in "${NODES_WITH_REQS[@]}"; do
+    if [ -d "$node_name" ] && [ -f "$node_name/requirements.txt" ]; then
+      echo "Installing dependencies for $node_name..."
+      pip install -r "$node_name/requirements.txt"
+    fi
+  done
+
+  # Special handling for was-node-suite-comfyui (cloned to specific name if desired, original didn't)
+  WAS_NODE_DIR_NAME="was-node-suite-comfyui" # Directory name it will be cloned into
+  WAS_NODE_REPO="https://github.com/WASasquatch/was-node-suite-comfyui.git"
+  if [ ! -d "$WAS_NODE_DIR_NAME" ]; then
+    echo "Cloning $WAS_NODE_DIR_NAME..."
+    git clone "$WAS_NODE_REPO" "$WAS_NODE_DIR_NAME"
   else
-    echo_section "Custom nodes already installed, skipping"
+    echo "Updating $WAS_NODE_DIR_NAME..."
+    (cd "$WAS_NODE_DIR_NAME" && git pull)
   fi
+  if [ -f "$WAS_NODE_DIR_NAME/requirements.txt" ]; then
+    echo "Installing dependencies for $WAS_NODE_DIR_NAME..."
+    pip install -r "$WAS_NODE_DIR_NAME/requirements.txt"
+  fi
+
+  cd "$COMFYUI_DIR" # Return to the main ComfyUI directory
+  mark_installed "custom_nodes"
 fi
 
 # 8. Clone FFmpeg source

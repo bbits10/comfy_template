@@ -1,0 +1,476 @@
+#!/bin/bash
+
+# Exit on error
+set -e
+
+# Source installation logger
+source /workspace/comfy_template/installation_logger.sh 2>/dev/null || true
+
+# --- Configuration ---
+COMFYUI_DIR="/workspace/ComfyUI" # Main directory for ComfyUI installation
+UPDATE_COMFY_UI=${1:-true}       # Set to "false" as first script argument to disable ComfyUI git pull
+INSTALL_CUSTOM_NODES_DEPENDENCIES=true
+USE_COMFYUI_MANAGER=true
+INSTALL_SAGEATTENTION=${INSTALL_SAGEATTENTION:-"background"} # "true", "false", or "background"
+
+# --- Installation Markers Directory ---
+MARKERS_DIR="/workspace/.install_markers"
+mkdir -p "$MARKERS_DIR"
+
+# --- Utility Functions ---
+echo_section() {
+  echo
+  echo "--- $1 ---"
+}
+
+is_installed() {
+    local component="$1"
+    [ -f "$MARKERS_DIR/$component.done" ]
+}
+
+mark_installed() {
+    local component="$1"
+    echo "$(date '+%Y-%m-%d %H:%M:%S')" > "$MARKERS_DIR/$component.done"
+    mark_completed "$component installation completed"
+}
+
+check_python_package() {
+    local package="$1"
+    python -c "import $package" 2>/dev/null
+}
+
+# Check if we're resuming an existing installation
+RESUMING_INSTALL=false
+if [ -d "$COMFYUI_DIR" ] && [ -f "$COMFYUI_DIR/main.py" ]; then
+    RESUMING_INSTALL=true
+    echo "=============================================="
+    echo "RESUMING EXISTING INSTALLATION"
+    echo "ComfyUI appears to be already installed."
+    echo "Will only install missing components."
+    echo "=============================================="
+fi
+# --- Script Start ---
+echo "=================================================="
+echo "Starting ComfyUI Setup for RunPod"
+echo "Target Directory: $COMFYUI_DIR"
+echo "Update ComfyUI: $UPDATE_COMFY_UI" 
+echo "Install Custom Nodes & Dependencies: $INSTALL_CUSTOM_NODES_DEPENDENCIES"
+echo "Use ComfyUI Manager: $USE_COMFYUI_MANAGER"
+echo "SageAttention Installation: $INSTALL_SAGEATTENTION"
+echo "Resuming Installation: $RESUMING_INSTALL"
+echo "=================================================="
+echo
+
+# Critical packages check - ensure safetensors is always available
+echo_section "Ensuring critical packages are available"
+echo "Installing/updating critical packages that ComfyUI needs..."
+
+# Upgrade pip first
+pip install --quiet --upgrade pip setuptools wheel
+
+# Install PyTorch with CUDA support first
+echo "Installing PyTorch with CUDA support..."
+pip install --quiet torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# Install other critical packages from PyPI (not CUDA index)
+echo "Installing safetensors and other critical packages..."
+pip install --quiet --force-reinstall safetensors>=0.4.2 transformers accelerate einops
+
+echo "✓ Critical packages installation completed"
+
+# Log installation start
+log_step "Starting ComfyUI installation and setup"
+update_status "overall" "starting"
+
+# Create parent directory for COMFYUI_DIR if it doesn't exist and navigate
+mkdir -p "$(dirname "$COMFYUI_DIR")"
+cd "$(dirname "$COMFYUI_DIR")"
+
+# 2. Clone or Update ComfyUI
+if ! is_installed "comfyui_core" || [ ! -d "$COMFYUI_DIR" ] || [ ! -f "$COMFYUI_DIR/main.py" ]; then
+  if [ ! -d "$COMFYUI_DIR" ]; then
+    echo_section "Cloning ComfyUI"
+    log_step "Cloning ComfyUI repository"
+    git clone https://github.com/comfyanonymous/ComfyUI.git "$COMFYUI_DIR"
+    cd "$COMFYUI_DIR"
+    mark_installed "comfyui_core"
+  else
+    cd "$COMFYUI_DIR"
+    if [ "$UPDATE_COMFY_UI" = true ]; then
+      echo_section "Updating ComfyUI"
+      log_step "Updating ComfyUI repository"
+      git pull
+      mark_installed "comfyui_core"
+    else
+      echo_section "ComfyUI exists, skipping update as per configuration."
+      log_step "ComfyUI exists, skipping update"
+      mark_installed "comfyui_core"
+    fi
+  fi
+else
+  echo_section "ComfyUI core already installed, skipping"
+  cd "$COMFYUI_DIR"
+fi
+
+update_status "comfyui_core" "completed"
+
+# 3. Install ComfyUI Main Dependencies
+echo_section "Installing ComfyUI main dependencies (FORCE INSTALL)"
+log_step "Installing ComfyUI main dependencies"
+
+# Ensure we're in the ComfyUI directory
+cd "$COMFYUI_DIR"
+
+# Always install requirements to ensure they're present
+if [ -f "requirements.txt" ]; then
+  echo "Installing from ComfyUI requirements.txt..."
+  pip install --force-reinstall -r requirements.txt
+else
+  echo "No requirements.txt found, installing essential packages..."
+  # Install PyTorch from CUDA index
+  pip install --force-reinstall torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+  # Install other packages from PyPI
+  pip install --force-reinstall safetensors>=0.4.2 transformers accelerate
+fi
+
+mark_installed "dependencies_main_v2"
+echo "✓ ComfyUI main dependencies installation completed"
+update_status "dependencies_main" "completed"
+
+# 4. Install Additional Core Dependencies (from Colab script)
+echo_section "Installing additional core dependencies (FORCE INSTALL)"
+log_step "Installing additional core dependencies"
+
+# Always reinstall critical packages to ensure they're available
+echo "Installing core Python packages..."
+pip install --force-reinstall accelerate einops transformers>=4.28.1 aiohttp pyyaml Pillow scipy tqdm psutil tokenizers>=0.13.3
+pip install --force-reinstall safetensors>=0.4.2  # Install separately to avoid conflicts
+pip install --force-reinstall torchsde
+pip install --force-reinstall kornia>=0.7.1 spandrel soundfile sentencepiece
+pip install --force-reinstall imageio-ffmpeg  # For VHS_VideoCombine node
+
+# Additional packages for ComfyUI and web services
+echo "Installing web service packages..."
+pip install --force-reinstall flask requests threading-utils
+
+# Install ComfyUI requirements if available
+if [ -f "$COMFYUI_DIR/requirements.txt" ]; then
+  echo "Installing ComfyUI requirements.txt..."
+  pip install --force-reinstall -r "$COMFYUI_DIR/requirements.txt"
+fi
+
+mark_installed "dependencies_additional_v2"
+echo "✓ Core dependencies installation completed"
+update_status "dependencies_additional" "completed"
+
+# 5. Install prerequisites for ComfyUI-Manager CLI and other tools
+echo_section "Installing GitPython and Typer (for ComfyUI-Manager CLI)"
+pip install GitPython typer
+mark_installed "manager_prerequisites"
+
+# 6. Setup ComfyUI-Manager (ALWAYS INSTALL)
+if [ "$USE_COMFYUI_MANAGER" = true ]; then
+  echo_section "Setting up ComfyUI-Manager (FORCE FRESH INSTALL)"
+  cd "$COMFYUI_DIR"  # Ensure we're in the right directory
+  MANAGER_DIR="$COMFYUI_DIR/custom_nodes/ComfyUI-Manager"
+  
+  # Always remove old markers and directories to force fresh installation
+  echo "Removing any existing markers and directories..."
+  rm -f "$MARKERS_DIR/comfyui_manager.done"
+  rm -f "$MARKERS_DIR/comfyui_manager_v2.done"
+  
+  echo "Creating custom_nodes directory..."
+  mkdir -p "$COMFYUI_DIR/custom_nodes"
+  
+  # Force fresh clone - always remove and re-clone
+  if [ -d "$MANAGER_DIR" ]; then
+    echo "Removing existing ComfyUI-Manager directory for fresh install..."
+    rm -rf "$MANAGER_DIR"
+  fi
+  
+  echo "Cloning ComfyUI-Manager..."
+  git clone https://github.com/ltdrdata/ComfyUI-Manager.git "$MANAGER_DIR"
+  
+  # Verify the clone was successful
+  if [ ! -d "$MANAGER_DIR" ]; then
+    echo "ERROR: Failed to clone ComfyUI-Manager!"
+    exit 1
+  fi
+  
+  if [ ! -f "$MANAGER_DIR/__init__.py" ]; then
+    echo "ERROR: ComfyUI-Manager directory exists but missing __init__.py!"
+    ls -la "$MANAGER_DIR"
+    exit 1
+  fi
+  
+  echo "ComfyUI-Manager cloned successfully. Contents:"
+  ls -la "$MANAGER_DIR"
+  
+  # Install requirements for ComfyUI-Manager, if any are specified in its own requirements.txt
+  if [ -f "$MANAGER_DIR/requirements.txt" ]; then
+    echo "Installing ComfyUI-Manager's own requirements..."
+    pip install --force-reinstall -r "$MANAGER_DIR/requirements.txt"
+  else
+    echo "No requirements.txt found in ComfyUI-Manager directory"
+  fi
+
+  echo "Attempting to restore dependencies via ComfyUI-Manager CLI..."
+  # This command's behavior depends on ComfyUI-Manager's state/config.
+  # It might restore a snapshot or install manager-specific dependencies.
+  if [ -f "$MANAGER_DIR/cm-cli.py" ]; then
+    python "$MANAGER_DIR/cm-cli.py" restore-dependencies || true # Don't fail if this doesn't work
+  else
+    echo "cm-cli.py not found in ComfyUI-Manager directory"
+  fi
+  
+  mark_installed "comfyui_manager_v3"  # Use v3 to force fresh install
+  echo "✓ ComfyUI-Manager setup completed successfully"
+  echo "Final verification - ComfyUI-Manager directory contents:"
+  ls -la "$COMFYUI_DIR/custom_nodes/"
+else
+  echo_section "ComfyUI-Manager installation disabled"
+fi
+
+# 7. Install Custom Nodes and Their Dependencies (ALWAYS INSTALL)
+if [ "$INSTALL_CUSTOM_NODES_DEPENDENCIES" = true ]; then
+  echo_section "Installing Custom Nodes & Their Dependencies (FORCE FRESH INSTALL)"
+  
+  # Always remove old markers to force fresh installation
+  echo "Removing any existing custom nodes markers..."
+  rm -f "$MARKERS_DIR/custom_nodes.done"
+  rm -f "$MARKERS_DIR/custom_nodes_v2.done"
+  
+  CUSTOM_NODES_DIR="$COMFYUI_DIR/custom_nodes"
+  mkdir -p "$CUSTOM_NODES_DIR"
+  cd "$CUSTOM_NODES_DIR"
+
+  # Repositories to clone (always fresh clone)
+  CUSTOM_NODES_REPOS=(
+    "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite"
+    "https://github.com/civitai/civitai_comfy_nodes"
+    "https://github.com/kijai/ComfyUI-KJNodes"
+    "https://github.com/cubiq/ComfyUI_essentials"
+    "https://github.com/sipherxyz/comfyui-art-venture"
+    "https://github.com/twri/sdxl_prompt_styler"
+    "https://github.com/Nourepide/ComfyUI-Allor"
+    "https://github.com/Extraltodeus/sigmas_tools_and_the_golden_scheduler"
+    "https://github.com/rgthree/rgthree-comfy"
+    "https://github.com/pollockjj/ComfyUI-MultiGPU"
+    "https://github.com/daxcay/ComfyUI-JDCN"
+    "https://github.com/city96/ComfyUI-GGUF"
+    "https://github.com/kijai/ComfyUI-GIMM-VFI"
+    "https://github.com/aria1th/ComfyUI-LogicUtils"
+    "https://github.com/scraed/LanPaint"
+    "https://github.com/BlenderNeko/ComfyUI_Noise"
+    "https://github.com/pythongosssss/ComfyUI-Custom-Scripts"
+    "https://github.com/ltdrdata/ComfyUI-Impact-Pack"
+    "https://github.com/Fannovel16/comfyui_controlnet_aux"
+    "https://github.com/melMass/comfy_mtb"
+    "https://github.com/ssitu/ComfyUI_UltimateSDUpscale"
+    # was-node-suite-comfyui is handled separately below
+    # SageAttention is handled separately in section 10
+  )
+
+  echo "Cloning/updating custom nodes repositories..."
+  for repo_url in "${CUSTOM_NODES_REPOS[@]}"; do
+    repo_name=$(basename "$repo_url" .git)
+    echo "Processing $repo_name..."
+    
+    # Force fresh clone - remove if exists and re-clone
+    if [ -d "$repo_name" ]; then
+      echo "  Removing existing $repo_name directory for fresh clone..."
+      rm -rf "$repo_name"
+    fi
+    
+    echo "  Cloning $repo_name..."
+    git clone "$repo_url" "$repo_name" || {
+      echo "  WARNING: Failed to clone $repo_name, continuing..."
+      continue
+    }
+    
+    # Verify clone succeeded
+    if [ ! -d "$repo_name" ]; then
+      echo "  WARNING: $repo_name directory not found after clone!"
+      continue
+    fi
+    
+    echo "  ✓ $repo_name cloned successfully"
+  done
+
+  echo "Installing requirements for custom nodes..."
+  # Install requirements for specific nodes that bundle them
+  NODES_WITH_REQS=(
+    "ComfyUI-GGUF"
+    "ComfyUI-JDCN"
+    "ComfyUI-KJNodes"
+    "ComfyUI-VideoHelperSuite"
+    "comfyui-art-venture"
+    "ComfyUI_essentials"
+    "ComfyUI-Impact-Pack"
+    "comfyui_controlnet_aux"
+    "comfy_mtb"
+    "ComfyUI_UltimateSDUpscale"
+  )
+  
+  for node_name in "${NODES_WITH_REQS[@]}"; do
+    if [ -d "$node_name" ] && [ -f "$node_name/requirements.txt" ]; then
+      echo "Installing dependencies for $node_name..."
+      pip install --force-reinstall -r "$node_name/requirements.txt" || {
+        echo "WARNING: Failed to install requirements for $node_name"
+      }
+    else
+      echo "No requirements.txt found for $node_name or directory missing"
+    fi
+  done
+
+  # Special handling for was-node-suite-comfyui (force fresh clone)
+  WAS_NODE_DIR_NAME="was-node-suite-comfyui"
+  WAS_NODE_REPO="https://github.com/WASasquatch/was-node-suite-comfyui.git"
+  
+  echo "Processing $WAS_NODE_DIR_NAME..."
+  if [ -d "$WAS_NODE_DIR_NAME" ]; then
+    echo "  Removing existing $WAS_NODE_DIR_NAME directory for fresh clone..."
+    rm -rf "$WAS_NODE_DIR_NAME"
+  fi
+  
+  echo "  Cloning $WAS_NODE_DIR_NAME..."
+  git clone "$WAS_NODE_REPO" "$WAS_NODE_DIR_NAME" || {
+    echo "  WARNING: Failed to clone $WAS_NODE_DIR_NAME"
+  }
+  
+  if [ -d "$WAS_NODE_DIR_NAME" ] && [ -f "$WAS_NODE_DIR_NAME/requirements.txt" ]; then
+    echo "Installing dependencies for $WAS_NODE_DIR_NAME..."
+    pip install --force-reinstall -r "$WAS_NODE_DIR_NAME/requirements.txt" || {
+      echo "WARNING: Failed to install requirements for $WAS_NODE_DIR_NAME"
+    }
+  fi
+
+  cd "$COMFYUI_DIR" # Return to the main ComfyUI directory
+  mark_installed "custom_nodes_v3"  # Use v3 to force fresh install
+  echo "✓ Custom nodes installation completed successfully"
+  
+  # List all installed custom nodes for verification
+  echo "Installed custom nodes:"
+  ls -1 "$COMFYUI_DIR/custom_nodes/" | grep -v "^ComfyUI-Manager$" || echo "No additional custom nodes found"
+else
+  echo_section "Custom nodes installation disabled"
+fi
+
+# 8. Clone FFmpeg source
+if ! is_installed "ffmpeg_source"; then
+  echo_section "Cloning FFmpeg source"
+  cd "$COMFYUI_DIR"
+  if [ ! -d "ffmpeg" ]; then
+    echo "Cloning FFmpeg repository..."
+    git clone https://git.ffmpeg.org/ffmpeg.git
+  else
+    echo "FFmpeg directory already exists. Skipping clone."
+  fi
+  mark_installed "ffmpeg_source"
+else
+  echo_section "FFmpeg source already installed, skipping"
+fi
+
+# 9. Install gguf-node after ComfyUI setup is complete
+# if ! is_installed "gguf_node"; then
+#   echo_section "Installing gguf-node"
+#   pip install gguf-node
+#   mark_installed "gguf_node"
+# else
+#   echo_section "gguf-node already installed, skipping"
+# fi
+
+# 10. Install SageAttention (Configurable)
+if [ "$INSTALL_SAGEATTENTION" != "false" ]; then
+  if ! is_installed "sageattention"; then
+    echo_section "Setting up SageAttention (mode: $INSTALL_SAGEATTENTION)"
+    cd "$COMFYUI_DIR"
+    if [ ! -d "SageAttention" ]; then
+      echo "Cloning SageAttention repository..."
+      git clone https://github.com/thu-ml/SageAttention.git
+    else
+      echo "SageAttention directory already exists. Updating..."
+      (cd "SageAttention" && git pull)
+    fi
+
+    if [ "$INSTALL_SAGEATTENTION" = "background" ]; then
+      # Create a background installation script
+      cat > install_sageattention.sh << 'EOF'
+#!/bin/bash
+echo "$(date): Starting SageAttention installation in background..."
+source /workspace/comfy_template/installation_logger.sh 2>/dev/null || true
+log_step "SageAttention background installation started"
+cd /workspace/ComfyUI/SageAttention
+python setup.py install
+echo "$(date '+%Y-%m-%d %H:%M:%S')" > /workspace/.install_markers/sageattention.done
+echo "$(date): SageAttention installation completed!" >> /workspace/sageattention_install.log
+EOF
+
+      chmod +x install_sageattention.sh
+      echo "SageAttention will be installed in the background. Check /workspace/sageattention_install.log for progress."
+      log_step "Starting SageAttention installation in background"
+      nohup ./install_sageattention.sh > /workspace/sageattention_install.log 2>&1 &
+      update_status "sageattention" "installing_background"
+    else
+      # Install synchronously (original behavior)
+      cd "SageAttention"
+      echo "Installing SageAttention synchronously (this may take 15-20 minutes)..."
+      log_step "Installing SageAttention synchronously (15-20 minutes)"
+      update_status "sageattention" "installing_sync"
+      python setup.py install
+      mark_installed "sageattention"
+      update_status "sageattention" "completed"
+    fi
+
+    cd "$COMFYUI_DIR" # Return to the main ComfyUI directory
+  else
+    echo_section "SageAttention already installed, skipping"
+    update_status "sageattention" "completed"
+  fi
+else
+  echo_section "Skipping SageAttention installation (INSTALL_SAGEATTENTION=false)"
+fi
+
+# 11. Download Models
+# echo_section "Downloading Models"
+# MODELS_BASE_DIR="$COMFYUI_DIR/models"
+# mkdir -p "$MODELS_BASE_DIR/text_encoders"
+# mkdir -p "$MODELS_BASE_DIR/vae"
+# mkdir -p "$MODELS_BASE_DIR/diffusion_models"
+# mkdir -p "$MODELS_BASE_DIR/unet" # For specific GGUF models if needed
+# mkdir -p "$MODELS_BASE_DIR/loras"
+# mkdir -p "$MODELS_BASE_DIR/clip_vision"
+
+
+
+# --- Setup Complete ---
+echo
+echo "=================================================="
+echo "ComfyUI Installation and Setup Complete!"
+echo "Target Directory: $COMFYUI_DIR"
+if [ "$RESUMING_INSTALL" = true ]; then
+    echo "Installation was resumed - only missing components were installed"
+fi
+echo "=================================================="
+echo
+echo "To start ComfyUI, navigate to the ComfyUI directory and run:"
+echo "  cd $COMFYUI_DIR"
+echo "  python main.py --listen --port 8188 --preview-method auto"
+echo
+echo "Ensure your RunPod instance's HTTP port is mapped to 8188."
+echo "For example, if RunPod exposes port 8080 externally, set it to proxy to 8188 internally."
+echo
+
+# Log completion
+if [ ! -f "$MARKERS_DIR/overall_installation.done" ]; then
+    mark_installed "overall_installation"
+fi
+update_status "overall" "completed"
+log_step "Installation script finished successfully"
+
+# Optional: Automatically start ComfyUI
+# echo "Starting ComfyUI..."
+# cd "$COMFYUI_DIR"
+# exec python main.py --listen --port 8188 --preview-method auto
+
+exit 0

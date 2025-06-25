@@ -89,39 +89,18 @@ if [ "$USE_COMFYUI_MANAGER" = true ]; then
   MANAGER_DIR="$COMFYUI_DIR/custom_nodes/ComfyUI-Manager"
   mkdir -p "$COMFYUI_DIR/custom_nodes"
   
-  echo "DEBUG: Checking if Manager directory exists: $MANAGER_DIR"
   if [ ! -d "$MANAGER_DIR" ]; then
     echo "Cloning ComfyUI-Manager..."
     git clone https://github.com/ltdrdata/ComfyUI-Manager.git "$MANAGER_DIR"
-    echo "DEBUG: Clone completed. Checking directory contents:"
-    ls -la "$MANAGER_DIR" 2>/dev/null || echo "ERROR: Directory not found after clone!"
   else
     echo "Updating ComfyUI-Manager..."
     (cd "$MANAGER_DIR" && git pull) # Use subshell to avoid cd issues
-    echo "DEBUG: Update completed. Checking directory contents:"
-    ls -la "$MANAGER_DIR" 2>/dev/null || echo "ERROR: Directory not found after update!"
-  fi
-
-  # Verify essential files exist
-  echo "DEBUG: Verifying ComfyUI-Manager files..."
-  if [ -f "$MANAGER_DIR/__init__.py" ]; then
-    echo "✅ __init__.py found"
-  else
-    echo "❌ __init__.py missing!"
-  fi
-  
-  if [ -f "$MANAGER_DIR/main.py" ]; then
-    echo "✅ main.py found"
-  else
-    echo "❌ main.py missing!"
   fi
 
   # Install requirements for ComfyUI-Manager, if any are specified in its own requirements.txt
   if [ -f "$MANAGER_DIR/requirements.txt" ]; then
     echo "Installing ComfyUI-Manager's own requirements..."
     pip install -r "$MANAGER_DIR/requirements.txt"
-  else
-    echo "No requirements.txt found in ComfyUI-Manager directory"
   fi
 
   echo "Attempting to restore dependencies via ComfyUI-Manager CLI..."
@@ -134,8 +113,6 @@ if [ "$USE_COMFYUI_MANAGER" = true ]; then
   fi
   
   echo "✓ ComfyUI-Manager setup completed"
-  echo "DEBUG: Final custom_nodes directory listing:"
-  ls -la "$COMFYUI_DIR/custom_nodes/" 2>/dev/null || echo "ERROR: custom_nodes directory not found!"
 fi
 
 # 7. Install Custom Nodes and Their Dependencies

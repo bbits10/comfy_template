@@ -18,6 +18,11 @@ MARKERS_DIR="/workspace/.install_markers"
 mkdir -p "$MARKERS_DIR"
 
 # --- Utility Functions ---
+echo_section() {
+  echo
+  echo "--- $1 ---"
+}
+
 is_installed() {
     local component="$1"
     [ -f "$MARKERS_DIR/$component.done" ]
@@ -69,11 +74,6 @@ update_status "overall" "starting"
 # Create parent directory for COMFYUI_DIR if it doesn't exist and navigate
 mkdir -p "$(dirname "$COMFYUI_DIR")"
 cd "$(dirname "$COMFYUI_DIR")"
-
-echo_section() {
-  echo
-  echo "--- $1 ---"
-}
 
 # 2. Clone or Update ComfyUI
 if ! is_installed "comfyui_core" || [ ! -d "$COMFYUI_DIR" ] || [ ! -f "$COMFYUI_DIR/main.py" ]; then

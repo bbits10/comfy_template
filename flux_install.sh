@@ -1,4 +1,4 @@
-#!/bin/bash
+ÿþ#!/bin/bash
 
 # Exit on error
 set -e
@@ -13,6 +13,45 @@ INSTALL_CUSTOM_NODES_DEPENDENCIES=true
 USE_COMFYUI_MANAGER=true
 INSTALL_SAGEATTENTION=${INSTALL_SAGEATTENTION:-"background"} # "true", "false", or "background"
 
+<<<<<<< HEAD
+# --- Installation Markers Directory ---
+MARKERS_DIR="/workspace/.install_markers"
+mkdir -p "$MARKERS_DIR"
+
+# --- Utility Functions ---
+echo_section() {
+  echo
+  echo "--- $1 ---"
+}
+
+is_installed() {
+    local component="$1"
+    [ -f "$MARKERS_DIR/$component.done" ]
+}
+
+mark_installed() {
+    local component="$1"
+    echo "$(date '+%Y-%m-%d %H:%M:%S')" > "$MARKERS_DIR/$component.done"
+    mark_completed "$component installation completed"
+}
+
+check_python_package({
+    local package="$1"
+    python -c "import $package" 2>/dev/null
+}
+
+# Check if we're resuming an existing installation
+RESUMING_INSTALL=false
+if [ -d "$COMFYUI_DIR" ] && [ -f "$COMFYUI_DIR/main.py" ]; then
+    RESUMING_INSTALL=true
+    echo "=============================================="
+    echo "RESUMING EXISTING INSTALLATION"
+    echo "ComfyUI appears to be already installed."
+    echo "Will only install missing components."
+    echo "=============================================="
+fi
+=======
+>>>>>>> parent of 9b1cb50 (update)
 # --- Script Start ---
 echo "=================================================="
 echo "Starting ComfyUI Setup for RunPod"
@@ -31,11 +70,6 @@ update_status "overall" "starting"
 # Create parent directory for COMFYUI_DIR if it doesn't exist and navigate
 mkdir -p "$(dirname "$COMFYUI_DIR")"
 cd "$(dirname "$COMFYUI_DIR")"
-
-echo_section() {
-  echo
-  echo "--- $1 ---"
-}
 
 # 2. Clone or Update ComfyUI
 if [ ! -d "$COMFYUI_DIR" ]; then
@@ -273,4 +307,4 @@ log_step "Installation script finished successfully"
 # cd "$COMFYUI_DIR"
 # exec python main.py --listen --port 8188 --preview-method auto
 
-exit 0
+exit   

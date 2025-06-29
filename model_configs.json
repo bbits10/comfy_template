@@ -8,6 +8,12 @@
         "path": "text_encoders/t5xxl_fp16.safetensors",
         "description": "Large text encoder for Flux models. Required for text-to-image tasks."
       },
+      "flux1_kontext_dev": {
+        "name": "Flux1 Kontext Dev",
+        "url": "https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev/resolve/main/flux1-kontext-dev.safetensors",
+        "path": "diffusion_models/flux1-kontext-dev.safetensors",
+        "description": "Flux1 Kontext development model weights."
+      },
       "clip_l": {
         "name": "CLIP L Text Encoder",
         "url": "https://huggingface.co/vivi168/text_encoder/resolve/main/clip_l.safetensors",
@@ -71,14 +77,20 @@
       "wan21_causvid_14b_t2v_lora_rank32": {
         "name": "Wan21 CausVid 14B T2V LoRA Rank32",
         "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
-        "path": "lora/Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
+        "path": "loras/Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
         "description": "LoRA for Wan2.1 CausVid 14B T2V. For video-to-video tasks."
       },
       "wan21_causvid_14b_t2v_lora_rank32_v2": {
         "name": "Wan21 CausVid 14B T2V LoRA Rank32 v2",
         "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors",
-        "path": "lora/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors",
+        "path": "loras/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors",
         "description": "LoRA v2 for Wan2.1 CausVid 14B T2V. For video-to-video tasks."
+      },
+      "Wan21_T2V_14B_lightx2v_cfg_step_distill_lora_rank32": {
+        "name": "Wan21 T2V 14B LightX2V CFG Step Distill LoRA Rank32",
+        "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_T2V_14B_lightx2v_cfg_step_distill_lora_rank32.safetensors",
+        "path": "loras/Wan21_T2V_14B_lightx2v_cfg_step_distill_lora_rank32.safetensors",
+        "description": "LoRA for Wan21 T2V 14B LightX2V with CFG step distillation, Rank32."
       },
       "Wan2.1-VACE-14B-Q8_0": {
         "name": "Wan2.1-VACE-14B-Q8_0",

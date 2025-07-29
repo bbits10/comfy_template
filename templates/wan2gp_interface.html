@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wan2GP Interface</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+        
+        .card h3 {
+            color: #667eea;
+            margin-top: 0;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card p {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            text-align: center;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .status-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            color: white;
+            text-align: center;
+        }
+        
+        .status-item h4 {
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+        }
+        
+        .status-item p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+        
+        .commands {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        
+        .commands h3 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        
+        .command-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        
+        .icon {
+            font-size: 1.2em;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Wan2GP Interface</h1>
+            <p>AI-Powered Text Generation Environment</p>
+        </div>
+        
+        <div class="status-grid">
+            <div class="status-item">
+                <h4>🐍 Python Environment</h4>
+                <p>Conda wan2gp (Python 3.10.9)</p>
+            </div>
+            <div class="status-item">
+                <h4>🔥 PyTorch</h4>
+                <p>Version 2.7.0 with CUDA 12.4</p>
+            </div>
+            <div class="status-item">
+                <h4>🚀 Wan2GP</h4>
+                <p>Latest from GitHub</p>
+            </div>
+            <div class="status-item">
+                <h4>📁 Storage</h4>
+                <p>Persistent /workspace</p>
+            </div>
+        </div>
+        
+        <div class="card-grid">
+            <div class="card">
+                <h3><span class="icon">📁</span> File Manager</h3>
+                <p>Access and manage your files through a web-based interface. Upload models, datasets, and scripts easily.</p>
+                <a href="http://localhost:8866" class="btn" target="_blank">Open File Manager</a>
+            </div>
+            
+            <div class="card">
+                <h3><span class="icon">📓</span> JupyterLab</h3>
+                <p>Interactive development environment for testing and experimentation with Wan2GP models.</p>
+                <a href="http://localhost:8888" class="btn" target="_blank">Open JupyterLab</a>
+            </div>
+            
+            <div class="card">
+                <h3><span class="icon">💻</span> Terminal Access</h3>
+                <p>Direct command-line access to run Wan2GP scripts and manage your environment.</p>
+                <a href="http://localhost:8866" class="btn" target="_blank">Access Terminal</a>
+            </div>
+            
+            <div class="card">
+                <h3><span class="icon">📊</span> Model Status</h3>
+                <p>Monitor your models, check GPU usage, and view system resources.</p>
+                <a href="#" class="btn" onclick="alert('Feature coming soon!')">View Status</a>
+            </div>
+        </div>
+        
+        <div class="commands">
+            <h3>🛠 Quick Commands</h3>
+            <p>Use these commands in the terminal to get started with Wan2GP:</p>
+            
+            <div class="command-box">
+                <strong>Navigate to Wan2GP directory:</strong><br>
+                cd /workspace/Wan2GP
+            </div>
+            
+            <div class="command-box">
+                <strong>Activate conda environment:</strong><br>
+                conda activate wan2gp
+            </div>
+            
+            <div class="command-box">
+                <strong>Check PyTorch CUDA availability:</strong><br>
+                python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
+            </div>
+            
+            <div class="command-box">
+                <strong>Update Wan2GP repository:</strong><br>
+                git pull origin main
+            </div>
+            
+            <div class="command-box">
+                <strong>Install additional packages:</strong><br>
+                pip install package_name
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="icon">📚</span> Documentation & Resources</h3>
+            <p>Access helpful documentation and resources for Wan2GP development.</p>
+            <div style="margin-top: 15px;">
+                <a href="https://github.com/deepbeepmeep/Wan2GP" class="btn" target="_blank">GitHub Repository</a>
+                <a href="#" class="btn" onclick="alert('Documentation coming soon!')">Documentation</a>
+                <a href="#" class="btn" onclick="alert('Examples coming soon!')">Examples</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Simple status check
+        function checkServices() {
+            // This would typically make AJAX calls to check service status
+            console.log('Checking service status...');
+        }
+        
+        // Check services on page load
+        window.addEventListener('load', checkServices);
+        
+        // Auto-refresh status every 30 seconds
+        setInterval(checkServices, 30000);
+    </script>
+</body>
+</html>

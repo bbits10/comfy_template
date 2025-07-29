@@ -1,0 +1,63 @@
+# Dockerfile for Wan2GP RunPod Template
+FROM runpod/pytorch:2.8.0-py3.11-cuda12.8.1-cudnn-devel-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Force new layer with build timestamp to bypass RunPod caching
+RUN echo "Build timestamp: $(date)" && echo "This forces a new layer and bypasses image caching"
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    git \
+    python3-pip \
+    dos2unix \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install conda/miniconda
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh && \
+    bash miniconda.sh -b -p /opt/miniconda && \
+    rm miniconda.sh
+
+# Add conda to PATH
+ENV PATH="/opt/miniconda/bin:$PATH"
+
+# Initialize conda
+RUN conda init bash
+
+# Update pip
+RUN python -m pip install --upgrade pip && \
+    python -m pip install --no-cache-dir flask==2.3.3 requests werkzeug==2.3.7 jupyterlab --ignore-installed
+
+WORKDIR /opt
+
+# Copy local files instead of cloning from GitHub
+COPY . /opt/comfy_template/
+
+# Change to the template directory
+WORKDIR /opt/comfy_template
+
+# Verify we have the files and fix line endings
+RUN ls -la && \
+    dos2unix *.sh && \
+    chmod +x *.sh
+
+# Expose ports for Wan2GP services
+EXPOSE 8188 8866 8765 8888 7860
+
+# Debug entrypoint that handles RunPod volume mounting
+RUN echo "=== Creating debug entrypoint ===" && \
+    echo '#!/bin/bash' > /debug_entrypoint.sh && \
+    echo 'echo "=== Debug: Container starting ==="' >> /debug_entrypoint.sh && \
+    echo 'echo "Current directory: $(pwd)"' >> /debug_entrypoint.sh && \
+    echo 'echo "Listing /workspace:"' >> /debug_entrypoint.sh && \
+    echo 'ls -la /workspace/' >> /debug_entrypoint.sh && \
+    echo 'echo "Listing /opt/comfy_template:"' >> /debug_entrypoint.sh && \
+    echo 'ls -la /opt/comfy_template/' >> /debug_entrypoint.sh && \
+    echo 'cd /workspace' >> /debug_entrypoint.sh && \
+    echo 'exec /opt/comfy_template/start_services_wan2gp.sh' >> /debug_entrypoint.sh && \
+    chmod +x /debug_entrypoint.sh
+
+# Set the entrypoint
+CMD ["/debug_entrypoint.sh"]

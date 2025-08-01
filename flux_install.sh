@@ -308,6 +308,7 @@ echo "$(date): Starting SageAttention installation in background..."
 source /workspace/comfy_template/installation_logger.sh 2>/dev/null || true
 log_step "SageAttention background installation started"
 cd /workspace/ComfyUI/SageAttention
+export EXT_PARALLEL=4 NVCC_APPEND_FLAGS="--threads 8" MAX_JOBS=32
 python setup.py install
 echo "$(date '+%Y-%m-%d %H:%M:%S')" > /workspace/.install_markers/sageattention.done
 echo "$(date): SageAttention installation completed!" >> /workspace/sageattention_install.log
@@ -324,6 +325,7 @@ EOF
       echo "Installing SageAttention synchronously (this may take 15-20 minutes)..."
       log_step "Installing SageAttention synchronously (15-20 minutes)"
       update_status "sageattention" "installing_sync"
+      export EXT_PARALLEL=4 NVCC_APPEND_FLAGS="--threads 8" MAX_JOBS=32
       python setup.py install
       mark_installed "sageattention"
       update_status "sageattention" "completed"

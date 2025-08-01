@@ -236,32 +236,6 @@ if [ "$INSTALL_CUSTOM_NODES_DEPENDENCIES" = true ]; then
     echo_section "Custom nodes already installed, skipping"
   fi
 fi
-    
-  )
-  for node_name in "${NODES_WITH_REQS[@]}"; do
-    if [ -d "$node_name" ] && [ -f "$node_name/requirements.txt" ]; then
-      echo "Installing dependencies for $node_name..."
-      pip install -r "$node_name/requirements.txt"
-    fi
-  done
-
-  # Special handling for was-node-suite-comfyui (cloned to specific name if desired, original didn't)
-  WAS_NODE_DIR_NAME="was-node-suite-comfyui" # Directory name it will be cloned into
-  WAS_NODE_REPO="https://github.com/WASasquatch/was-node-suite-comfyui.git"
-  if [ ! -d "$WAS_NODE_DIR_NAME" ]; then
-    echo "Cloning $WAS_NODE_DIR_NAME..."
-    git clone "$WAS_NODE_REPO" "$WAS_NODE_DIR_NAME"
-  else
-    echo "Updating $WAS_NODE_DIR_NAME..."
-    (cd "$WAS_NODE_DIR_NAME" && git pull)
-  fi
-  if [ -f "$WAS_NODE_DIR_NAME/requirements.txt" ]; then
-    echo "Installing dependencies for $WAS_NODE_DIR_NAME..."
-    pip install -r "$WAS_NODE_DIR_NAME/requirements.txt"
-  fi
-
-  cd "$COMFYUI_DIR" # Return to the main ComfyUI directory
-fi
 
 # 8. Clone FFmpeg source
 if ! is_installed "ffmpeg_source"; then
@@ -310,8 +284,29 @@ log_step "SageAttention background installation started"
 cd /workspace/ComfyUI/SageAttention
 export EXT_PARALLEL=4 NVCC_APPEND_FLAGS="--threads 8" MAX_JOBS=32
 python setup.py install
-echo "$(date '+%Y-%m-%d %H:%M:%S')" > /workspace/.install_markers/sageattention.done
-echo "$(date): SageAttention installation completed!" >> /workspace/sageattention_install.log
+
+# Check if installation was successful
+if [ $? -eq 0 ]; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S')" > /workspace/.install_markers/sageattention.done
+    echo "$(date): SageAttention installation completed successfully!" >> /workspace/sageattention_install.log
+    
+    # Find and restart ComfyUI if it's running
+    COMFY_PID=$(pgrep -f "python.*main.py.*--listen.*--port.*8188" || echo "")
+    if [ ! -z "$COMFY_PID" ]; then
+        echo "$(date): Found ComfyUI running (PID: $COMFY_PID). Restarting to load SageAttention..." >> /workspace/sageattention_install.log
+        kill $COMFY_PID
+        sleep 3
+        cd /workspace/ComfyUI
+        nohup python main.py --listen --port 8188 --preview-method auto > /workspace/comfyui_restart.log 2>&1 &
+        NEW_PID=$!
+        echo "$(date): ComfyUI restarted with new PID: $NEW_PID" >> /workspace/sageattention_install.log
+        echo "$(date): SageAttention is now available in ComfyUI!" >> /workspace/sageattention_install.log
+    else
+        echo "$(date): ComfyUI not running. SageAttention will be available when you start ComfyUI." >> /workspace/sageattention_install.log
+    fi
+else
+    echo "$(date): SageAttention installation failed!" >> /workspace/sageattention_install.log
+fi
 EOF
 
       chmod +x install_sageattention.sh

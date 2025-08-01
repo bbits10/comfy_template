@@ -97,6 +97,19 @@
         "path": "unet/Wan2.2-T2V-A14B-HighNoise-Q6_K.gguf",
         "description": "Wan2.2 T2V A14B HighNoise quantized GGUF Q6_K."
       }
+      ,
+      "wan2.2_i2v_low_noise_14B_Q8_0": {
+        "name": "Wan2.2 I2V Low Noise 14B Q8_0 GGUF",
+        "url": "https://huggingface.co/bullerwins/Wan2.2-I2V-A14B-GGUF/resolve/main/wan2.2_i2v_low_noise_14B_Q8_0.gguf",
+        "path": "unet/wan2.2_i2v_low_noise_14B_Q8_0.gguf",
+        "description": "Wan2.2 I2V Low Noise 14B quantized GGUF Q8_0."
+      },
+      "wan2.2_i2v_high_noise_14B_Q8_0": {
+        "name": "Wan2.2 I2V High Noise 14B Q8_0 GGUF",
+        "url": "https://huggingface.co/bullerwins/Wan2.2-I2V-A14B-GGUF/resolve/main/wan2.2_i2v_high_noise_14B_Q8_0.gguf",
+        "path": "unet/wan2.2_i2v_high_noise_14B_Q8_0.gguf",
+        "description": "Wan2.2 I2V High Noise 14B quantized GGUF Q8_0."
+      }
     }
   },
   "Wan2.1 Vace": {

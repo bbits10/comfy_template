@@ -339,6 +339,18 @@
         "path": "text_encoders/umt5-xxl-enc-bf16.safetensors",
         "description": "Text encoder for Wan 2.x pipelines (BF16)."
       },
+      "umt5_xxl_fp8_e4m3fn_scaled": {
+        "name": "UMT5-XXL FP8 E4M3FN Scaled (Text Encoder)",
+        "url": "https://huggingface.co/chatpig/encoder/resolve/main/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+        "path": "text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+        "description": "Alternative FP8 scaled UMT5 XXL text encoder for Wan 2.x pipelines."
+      },
+      "clip_vision_h": {
+        "name": "CLIP Vision H",
+        "url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors",
+        "path": "clip_vision/clip_vision_h.safetensors",
+        "description": "CLIP Vision H encoder used in Wan 2.x pipelines."
+      },
       "wan21_i2v_14b_lightx2v_cfg_step_distill_lora_rank64": {
         "name": "Wan21 I2V 14B LightX2V CFG Step Distill LoRA Rank64",
         "url": "https://huggingface.co/lightx2v/Wan2.1-I2V-14B-480P-StepDistill-CfgDistill-Lightx2v/resolve/main/loras/Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors",
